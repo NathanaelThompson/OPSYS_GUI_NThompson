@@ -1,0 +1,9 @@
+C:\Users\nate\Documents\Visual Studio 2012\Projects\CSharpOnVS2012\OPSYS_GUI_NThompson\OPSYS_GUI_NThompson\bin\Debug\OPSYS_GUI_NThompson.exe.config
+C:\Users\nate\Documents\Visual Studio 2012\Projects\CSharpOnVS2012\OPSYS_GUI_NThompson\OPSYS_GUI_NThompson\bin\Debug\OPSYS_GUI_NThompson.exe
+C:\Users\nate\Documents\Visual Studio 2012\Projects\CSharpOnVS2012\OPSYS_GUI_NThompson\OPSYS_GUI_NThompson\bin\Debug\OPSYS_GUI_NThompson.pdb
+C:\Users\nate\Documents\Visual Studio 2012\Projects\CSharpOnVS2012\OPSYS_GUI_NThompson\OPSYS_GUI_NThompson\obj\Debug\OPSYS_GUI_NThompson.csprojResolveAssemblyReference.cache
+C:\Users\nate\Documents\Visual Studio 2012\Projects\CSharpOnVS2012\OPSYS_GUI_NThompson\OPSYS_GUI_NThompson\obj\Debug\OPSYS_GUI_NThompson.StartForm.resources
+C:\Users\nate\Documents\Visual Studio 2012\Projects\CSharpOnVS2012\OPSYS_GUI_NThompson\OPSYS_GUI_NThompson\obj\Debug\OPSYS_GUI_NThompson.Properties.Resources.resources
+C:\Users\nate\Documents\Visual Studio 2012\Projects\CSharpOnVS2012\OPSYS_GUI_NThompson\OPSYS_GUI_NThompson\obj\Debug\OPSYS_GUI_NThompson.csproj.GenerateResource.Cache
+C:\Users\nate\Documents\Visual Studio 2012\Projects\CSharpOnVS2012\OPSYS_GUI_NThompson\OPSYS_GUI_NThompson\obj\Debug\OPSYS_GUI_NThompson.exe
+C:\Users\nate\Documents\Visual Studio 2012\Projects\CSharpOnVS2012\OPSYS_GUI_NThompson\OPSYS_GUI_NThompson\obj\Debug\OPSYS_GUI_NThompson.pdb
