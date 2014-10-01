@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OPSYS_GUI_NThompson", "OPSYS_GUI_NThompson\OPSYS_GUI_NThompson.csproj", "{614CC960-67E3-47A1-AF7C-B1643C57F4C9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IT3883_project", "..\..\ITProjectToGithub\IT3883_project\IT3883_project\IT3883_project.csproj", "{4D83BED8-6AED-4384-B7AD-CCAEAFCBAB43}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{614CC960-67E3-47A1-AF7C-B1643C57F4C9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{614CC960-67E3-47A1-AF7C-B1643C57F4C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{614CC960-67E3-47A1-AF7C-B1643C57F4C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{614CC960-67E3-47A1-AF7C-B1643C57F4C9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D83BED8-6AED-4384-B7AD-CCAEAFCBAB43}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D83BED8-6AED-4384-B7AD-CCAEAFCBAB43}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D83BED8-6AED-4384-B7AD-CCAEAFCBAB43}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D83BED8-6AED-4384-B7AD-CCAEAFCBAB43}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
