@@ -5,21 +5,20 @@
  * Prof. Michael Franklin
  * 
  */
-
 /*
  * TO DO
  * --------
  * Phase 1: Load instructions from text file into bootstrap program. (COMPLETED)
  *          Format instructions. (COMPLETED)
  *          Move instructions to the hard drive. (COMPLETED)
- *          Move the instructions to the long term scheduler. (NOT STARTED)
- *          Something about process controls blocks. (NOT STARTED)
- *          Sort instructions based on three algorithms: (NOT STARTED)
- *              1.First come first serve
- *              2.Priority
- *              3.
- *          Move each sorted instruction to RAM. (NOT STARTED)
- *          Display information about instructions to user. (NOT STARTED)
+ *          Move the instructions to the long term scheduler. (COMPLETED)
+ *          Sort jobs and move into PCBs (COMPLETED)
+ *          Sort instructions based on three algorithms: (COMPLETED)
+ *              1.First come first serve (good)
+ *              2.Priority (may be missing last job)
+ *              3.Shortest job first (may be missing last job)
+ *          Move each sorted instruction to RAM. (COMPLETED)
+ *          Display information about instructions to user. (COMPLETED)
  * 
  * Phase 2: Moves jobs from RAM to ready-queue via the short term scheduler, and whole bunch of other stuff.
  * Phase 3:
@@ -33,23 +32,23 @@
   *          I may feel comfortable in C#, but there is no reason for me to try to manipulate the hardware until I actually know how the abstract
   *          pieces interact.
   *          
-  * 8/28/14: Orignially this was going to be a console application.  However, multiple times in class Prof. Franklin stated that he preferred ease-of-use
-  *          and style over bare-bones functionality.  As such, I intend to make this program run with one button click.
-  *          Adding notes and a to-do list might seem like overkill when it comes to documentation, but I'd rather have too much than not enough.  Who knows,
-  *          maybe someone will read this one day.  
+  * 8/28/14: Orignially this was going to be a console application.  
+  *          However, multiple times in class Prof. Franklin stated that he preferred ease-of-use
+  *          and style over bare-bones functionality.  As such, I intend to make this 
+  *          program run with one button click. 
   *          
-  *          There is some potential for inheritance/polymorphism between the items which are hardware and can hold a certain amount of items.
-  *          For example, the hard drive and RAM are both containers where little to no processing will take place.  There is also overlap
-  *          in the long term scheduler, the short term scheduler, and a small amount in the bootstrap.  I could just be making extra work for myself,
-  *          but it might clear up some things in the long run.  Hard to say for sure.  As of this day, it is not likely I will implement much inheritance 
-  *          or polymorphism.
+  * 9/17/14: I've neglected this project too long.  I've been way too busy with Applications Programming.  
   *          
-  *          On this day I created, but not completed, most classes required for Phase 1.  Though I'm sure more will unfold as I progress.  
+  * 10/1/14: Once again, I've neglected this project for far too long.  This is due in 5 days, but it is pretty far along 
+  *          after only being worked on for about 5 hours.  Luckily, I have this weekend, and the rest of this week
+  *          to really get my hands dirty with this project.  
   *          
-  * 9/17/14  I've neglected this project too long.  I've been way too busy with Applications Programming.  
-  *          It is literally what I spend 90% of my time on these days, the other 10% being relaxing from working so much on AppProg.
-  *          With that in mind, I have much work to do in this program.  None of it is code I haven't written before, but there
-  *          will be a LARGE amount of inter-class dependence; which brings its own headaches.
+  * 10/2/14: I can't believe how easy this project is.  This isn't even the hardest programming assignment I've had this week.
+  *          This is pretty much done.  The only thing left is the Priority sort and the SJF sort.
+  *          
+  * 10/3/14: Issues sorting PCBs.
+  * 10/4/14: This project is fully functional.  I haven't tested ram size for extreme values, but that's it.  I am going to add an option for
+  *          the user to select the file from an open file dialog.
   */
 using System;
 using System.Collections.Generic;
@@ -65,6 +64,15 @@ namespace OPSYS_GUI_NThompson
 {
     public partial class StartForm : Form
     {
+        //string where the file path is stored
+        public static string instructionPath;
+        
+        //declaring important objects/hardware
+        public static RAMObject ram;
+        public static List<Instruction> instructions;
+        public static List<ProcessControlBlock> pcbList;
+        public static HardDrive hdd;
+
         public StartForm()
         {
             InitializeComponent();
@@ -72,66 +80,97 @@ namespace OPSYS_GUI_NThompson
 
         private void goButton_Click(object sender, EventArgs e)
         {
-            HardDrive hdd = new HardDrive();
-            LongTermScheduler lts = new LongTermScheduler();
+            //new hard drive, which passes the instuction file path as a parameter
+            hdd = new HardDrive(instructionPath);
+
             
-            RAMObject ram;
+
+            //List holding all instructions from hard drive
+            instructions = new List<Instruction>(hdd.GetInstructions());
+
+            //List holding all PCB Objects created at the hard drive
+            pcbList = new List<ProcessControlBlock>(hdd.GetPCBList());
             
+            //if ramBox is empty, initialize RAM with size 100
             if (ramBox.Text == "")
             {
                 ram = new RAMObject(100);
             }
             else
             {
+                //This try/catch block attempts to grab the size of RAM from the form
+                //If the size is inappropriate or something other than an integer
+                //is grabbed from ramBox, this will generate an Exception and messageBox
                 try
                 {
                     int ramSize = int.Parse(ramBox.Text);
                     if (ramSize > 1000000)
                     {
-                        MessageBox.Show("Size of RAM too large",
+                        MessageBox.Show("Size of RAM too large. Please try again.",
                             "Input Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        ramAst.Visible = true;
+                        return;
                     }
-                    else
+                    else if (ramSize < 10)
+                    {
+                        MessageBox.Show("Size of RAM too small. Please try again.",
+                            "Input Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        ramAst.Visible = true;
+                        return;
+                    }
+                    else //RAM size successfully passed size limitations and formatting
                     {
                         ram = new RAMObject(ramSize);
+                        ramAst.Visible = false;
                     }
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show("Ram size formatted incorrectly. Please try again using only integers.", 
                         "Input Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    goto EndOfBigLoop;
+                    return;
                 }
             }
 
-            if(scheduleCB.Text == "" || scheduleCB.Text == "First Come First Serve")
-            {
-                lts.FirstComeFirstServe(Program.instructionsAndJobHeaders);
-                //add sorted instructions to pcbs
-                //move pcb objects to RAM if they fit
-                //display a timer
+            //Form which shows instructions in RAM
+            DisplayForm dspForm = new DisplayForm();
+            
+            //New long term scheduler
+            LongTermScheduler lts = new LongTermScheduler();
+            
+            //Selecting and applying the scheduling algorithm
+            if (scheduleCB.SelectedItem == null || scheduleCB.SelectedItem.ToString() == "First Come First Serve")
+            {   //First Come First Serve
+                scheduleAst.Visible = false;
+                lts.FirstComeFirstServe(pcbList);
+                dspForm.Show();
             }
-
-            if (scheduleCB.Text == "Shortest Job First")
-            {
-                lts.ShortestJobFirst(Program.instructionsAndJobHeaders);
-                //add sorted instructions to pcb
+            else if (scheduleCB.SelectedItem.ToString() == "Shortest Job First")
+            {   //Shortest Job First
+                scheduleAst.Visible = false;
+                lts.ShortestJobFirst(pcbList);
+                dspForm.Show();
             }
-
-            if (scheduleCB.Text == "Priority")
-            {
-                lts.PrioritySort(Program.instructionsAndJobHeaders);
-                //add sorted instructions to pcb
+            else if (scheduleCB.SelectedItem.ToString() == "Priority")
+            {   //Priority
+                scheduleAst.Visible = false;
+                lts.PrioritySort(pcbList);
+                dspForm.Show();
             }
-
-        EndOfBigLoop:
-            ;
-        }
+            else
+            {
+                MessageBox.Show("Scheduling Algorithm Error. Please try again with a different algorithm.",
+                    "Input Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                scheduleAst.Visible = true;
+                return;
+            }
+        }//end "go" button
 
         private void helpButton_Click(object sender, EventArgs e)
         {
-            string helpMessage = "If you press the 'Go' button, this program will use default values for processing. " +
-                "The default values are as follows: Number of Processors = 1, Number of Cores per Processor = 1, Size of RAM = 100, Scheduling Algorithm = FCFS. " +
+            string helpMessage = "If you press the 'Go' button, this program will use default values for processing.\n\n" +
+                "The default values are as follows: Number of Processors = 1, Number of Cores per Processor = 1, Size of RAM = 100, Scheduling Algorithm = FCFS. \n\n" +
+                "You can import instructions by clicking the 'Import Instructions...' menu item.  The default instruction file location is OPSYS_GUI_NThompson/Debug/bin. \n\n" +
                 "If you have any more questions about this project or how it works, contact me at: nathanael.thompson90@gmail.com.";
             MessageBox.Show(helpMessage, "Help", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
@@ -139,6 +178,18 @@ namespace OPSYS_GUI_NThompson
         private void quitButton_Click(object sender, EventArgs e)
         {
             Application.Exit();
+        }
+
+        private void quitToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Application.Exit();
+        }
+
+        private void importFileToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //selecting a new instruction file from the Hard Drive
+            HardDrive tempDrive = new HardDrive();
+            instructionPath = tempDrive.FileSelector();
         }
     }
 }

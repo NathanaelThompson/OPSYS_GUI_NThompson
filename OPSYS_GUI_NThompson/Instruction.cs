@@ -8,40 +8,33 @@ namespace OPSYS_GUI_NThompson
 {
     public class Instruction
     {
-        string jobName, instructionType, register1, register2;
-        int jobNumber, instructionLine, instructionValue, jobPriority, jobLength;
+        //Instruction members
+        string instructionType, register1, register2;
+        int instructionLine, instructionValue, jobID;
 
-        //Constructor which describes the job's name, length, and priority
-        public Instruction(string name, int length, int priority)
+        public Instruction()
         {
-            jobName = name;
-            jobLength = length;
-            jobPriority = priority;
+            //default Instruction Construction
+            //See what I did there?
         }
         
         //Constructor describing individual instructions
-        public Instruction(int line, string type, string reg1, string reg2, int value)
+        public Instruction(int line, string type, string reg1, string reg2, int value, int jobID)
         {
             instructionLine = line;
             instructionType = type;
             register1 = reg1;
             register2 = reg2;
             instructionValue = value;
+            this.jobID = jobID;
         }
 
         #region Get Methods
-        public string GetJobName()
+        public int GetJobID()
         {
-            return jobName;
+            return jobID;
         }
-        public int GetJobLength()
-        {
-            return jobLength;
-        }
-        public int GetJobPriority()
-        {
-            return jobPriority;
-        }
+        
         public int GetInstructionLine()
         {
             return instructionLine;
@@ -65,18 +58,11 @@ namespace OPSYS_GUI_NThompson
         #endregion
 
         #region Set Methods
-        public void SetJobName(string name)
+        public void SetJobID(int id)
         {
-            jobName = name;
+            jobID = id;
         }
-        public void SetJobLength(int length)
-        {
-            jobLength = length;
-        }
-        public void SetJobPriority(int priority)
-        {
-            jobPriority = priority;
-        }
+       
         public void SetInstructionLine(int lineNumber)
         {
             instructionLine = lineNumber;

@@ -7,3 +7,4 @@ C:\Users\nate\Documents\Visual Studio 2012\Projects\CSharpOnVS2012\OPSYS_GUI_NTh
 C:\Users\nate\Documents\Visual Studio 2012\Projects\CSharpOnVS2012\OPSYS_GUI_NThompson\OPSYS_GUI_NThompson\obj\Debug\OPSYS_GUI_NThompson.csproj.GenerateResource.Cache
 C:\Users\nate\Documents\Visual Studio 2012\Projects\CSharpOnVS2012\OPSYS_GUI_NThompson\OPSYS_GUI_NThompson\obj\Debug\OPSYS_GUI_NThompson.exe
 C:\Users\nate\Documents\Visual Studio 2012\Projects\CSharpOnVS2012\OPSYS_GUI_NThompson\OPSYS_GUI_NThompson\obj\Debug\OPSYS_GUI_NThompson.pdb
+C:\Users\nate\Documents\Visual Studio 2012\Projects\CSharpOnVS2012\OPSYS_GUI_NThompson\OPSYS_GUI_NThompson\obj\Debug\OPSYS_GUI_NThompson.DisplayForm.resources

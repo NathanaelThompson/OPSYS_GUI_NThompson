@@ -8,7 +8,7 @@ namespace OPSYS_GUI_NThompson
 {
     static class Program
     {
-        public static Instruction[] instructionsAndJobHeaders;
+        
         /// <summary>
         /// The main entry point for the application.
         /// </summary>

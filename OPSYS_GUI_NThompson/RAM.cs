@@ -7,42 +7,38 @@ using System.Threading.Tasks;
 namespace OPSYS_GUI_NThompson
 {
 
-    class RAMObject
+    public class RAMObject
     {
+        //RAMObject members
         int size;
-        List<ProcessControlBlock> PCBList;
-        static int instructionCount = 0;
-        //constructor with a list of PCB objects, and size
-        public RAMObject(int sz, List<ProcessControlBlock> listPCB)
-        {
-            size = sz;
-            PCBList = listPCB;
-        }
-
+        public static List<Instruction> instructionsInRAM;
+        
         //constructor with size parameter
         public RAMObject(int sz)
         {
             size = sz;
+            instructionsInRAM = new List<Instruction>(size);
         }
         
         //default constructor
         public RAMObject()
         {
             size = 100;
+            instructionsInRAM = new List<Instruction>(size);
         }
 
-        //adds a PCB object to RAM
-        public void AddPCBToRAM(ProcessControlBlock pcb)
+        //adds instructions to RAM
+        public void AddInstructionsToRAM(List<Instruction> instructs)
         {
-            if((pcb.GetPCBJobLength() + instructionCount) > size)
+            foreach (Instruction inst in instructs)
             {
-                return;
+                instructionsInRAM.Add(inst);
             }
-            else
-            {
-                instructionCount += pcb.GetPCBJobLength();
-                PCBList.Add(pcb);
-            }
+        }
+        //Gets instructions in RAM
+        public List<Instruction> GetInstructionsInRAM()
+        {
+            return instructionsInRAM;
         }
 
         //Gets the size of RAM
@@ -50,12 +46,11 @@ namespace OPSYS_GUI_NThompson
         {
             return size;
         }
-
-        //Gets PCB objects in RAM
-        public List<ProcessControlBlock> GetPCBsInRAM()
-        {
-            return PCBList;
-        }
         
+        //counts instructions in RAM
+        public int InstructionsInRAMCount()
+        {
+            return instructionsInRAM.Count;
+        }
     }
 }

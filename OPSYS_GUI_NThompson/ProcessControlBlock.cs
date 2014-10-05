@@ -8,26 +8,26 @@ namespace OPSYS_GUI_NThompson
 {
     public class ProcessControlBlock
     {
+        //PCB members
         string jobName;
-        int jobLength, jobPriority;
-        public Instruction[] instructions;
+        int jobLength, jobPriority, pcbID;
         
-        public ProcessControlBlock(Instruction[] instructs, string name, int length, int priority)
+        //overloadded Constructor
+        public ProcessControlBlock(string name, int length, int priority, int id)
         {
-            instructions = instructs;
             jobName = name;
             jobLength = length;
             jobPriority = priority;
+            pcbID = id;
         }
 
+        //default constructor
         public ProcessControlBlock()
         {
 
         }
-        public Instruction[] GetInstructionsInPCB()
-        {
-            return instructions;
-        }
+
+        #region Get and Set Methods
         public string GetPCBJobName()
         {
             return jobName;
@@ -36,5 +36,46 @@ namespace OPSYS_GUI_NThompson
         {
             return jobLength;
         }
+        public int GetPCBJobPriority()
+        {
+            return jobPriority;
+        }
+        public int GetPCBID()
+        {
+            return pcbID;
+        }
+        public List<Instruction> GetInstructions(int pcbID)
+        {
+            List<Instruction> tempInstructions = new List<Instruction>();
+
+            //compares the instructions' ID to the 
+            //PCB's id passed as the parameter to this function
+            foreach (Instruction inst in StartForm.instructions)
+            {
+                if (inst.GetJobID() == pcbID)
+                {
+                    tempInstructions.Add(inst);
+                }
+            }
+            //return all instructions with matching ID
+            return tempInstructions;
+        }
+        public void SetPCBJobName(string name)
+        {
+            jobName = name;
+        }
+        public void SetPCBJobLength(int length)
+        {
+            jobLength = length;
+        }
+        public void SetPCBJobPriority(int priority)
+        {
+            jobPriority = priority;
+        }
+        public void SetPCBID(int id)
+        {
+            pcbID = id;
+        }
+        #endregion
     }
 }
