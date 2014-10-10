@@ -30,14 +30,12 @@
         {
             this.goButton = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
             this.scheduleCB = new System.Windows.Forms.ComboBox();
             this.label3 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
             this.helpButton = new System.Windows.Forms.Button();
             this.quitButton = new System.Windows.Forms.Button();
             this.processorBox = new System.Windows.Forms.TextBox();
-            this.coreBox = new System.Windows.Forms.TextBox();
             this.ramBox = new System.Windows.Forms.TextBox();
             this.ramAst = new System.Windows.Forms.Label();
             this.scheduleAst = new System.Windows.Forms.Label();
@@ -61,20 +59,11 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(71, 56);
+            this.label1.Location = new System.Drawing.Point(71, 84);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(153, 17);
             this.label1.TabIndex = 1;
             this.label1.Text = "Number of Processors:";
-            // 
-            // label2
-            // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(12, 84);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(212, 17);
-            this.label2.TabIndex = 2;
-            this.label2.Text = "Number of Cores per Processor:";
             // 
             // scheduleCB
             // 
@@ -129,18 +118,10 @@
             // processorBox
             // 
             this.processorBox.Enabled = false;
-            this.processorBox.Location = new System.Drawing.Point(230, 53);
+            this.processorBox.Location = new System.Drawing.Point(230, 81);
             this.processorBox.Name = "processorBox";
             this.processorBox.Size = new System.Drawing.Size(178, 22);
             this.processorBox.TabIndex = 8;
-            // 
-            // coreBox
-            // 
-            this.coreBox.Enabled = false;
-            this.coreBox.Location = new System.Drawing.Point(230, 81);
-            this.coreBox.Name = "coreBox";
-            this.coreBox.Size = new System.Drawing.Size(178, 22);
-            this.coreBox.TabIndex = 9;
             // 
             // ramBox
             // 
@@ -204,21 +185,19 @@
             this.Controls.Add(this.scheduleAst);
             this.Controls.Add(this.ramAst);
             this.Controls.Add(this.ramBox);
-            this.Controls.Add(this.coreBox);
             this.Controls.Add(this.processorBox);
             this.Controls.Add(this.quitButton);
             this.Controls.Add(this.helpButton);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.scheduleCB);
-            this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.goButton);
             this.Controls.Add(this.menuStrip1);
             this.MainMenuStrip = this.menuStrip1;
             this.Margin = new System.Windows.Forms.Padding(4);
             this.Name = "StartForm";
-            this.Text = "Operating Systems Project, Part 1";
+            this.Text = "Operating Systems Project, Part 2";
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
             this.ResumeLayout(false);
@@ -230,14 +209,12 @@
 
         private System.Windows.Forms.Button goButton;
         private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.Label label2;
         private System.Windows.Forms.ComboBox scheduleCB;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.Button helpButton;
         private System.Windows.Forms.Button quitButton;
         private System.Windows.Forms.TextBox processorBox;
-        private System.Windows.Forms.TextBox coreBox;
         private System.Windows.Forms.TextBox ramBox;
         private System.Windows.Forms.Label ramAst;
         private System.Windows.Forms.Label scheduleAst;

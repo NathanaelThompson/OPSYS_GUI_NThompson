@@ -19,10 +19,13 @@ namespace OPSYS_GUI_NThompson
 
         private void DisplayForm_Load(object sender, EventArgs e)
         {
+            /*I don't understand why this won't clear, but it shouldn't matter for phase 2*/
             InstructionGridCreator();
+            
         }
         public void InstructionGridCreator()
         {
+            DataGridView grid = new DataGridView();
             instructionGrid.ColumnCount = 6;
             instructionGrid.Columns[0].Name = "Line";
             instructionGrid.Columns[1].Name = "Type";
@@ -44,7 +47,9 @@ namespace OPSYS_GUI_NThompson
                     instructionsInRam[i].GetInstructionValue().ToString(),
                     instructionsInRam[i].GetJobID().ToString() 
                 };
-                instructionGrid.Rows.Add(row);
+                
+                grid = instructionGrid;
+                grid.Rows.Add(row);
             }
         }
 
@@ -55,6 +60,8 @@ namespace OPSYS_GUI_NThompson
 
         private void closeButton_Click(object sender, EventArgs e)
         {
+            instructionGrid.Rows.Clear();
+            instructionGrid.Refresh();
             this.Close();
         }
     }

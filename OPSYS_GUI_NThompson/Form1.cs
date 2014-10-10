@@ -20,8 +20,20 @@
  *          Move each sorted instruction to RAM. (COMPLETED)
  *          Display information about instructions to user. (COMPLETED)
  * 
- * Phase 2: Moves jobs from RAM to ready-queue via the short term scheduler, and whole bunch of other stuff.
- * Phase 3:
+ * Phase 2: Moves jobs from RAM to Dispatcher via the short term scheduler
+ *          Moves jobs from Dispatcher to CPU
+ *          Create CPU and Dispatcher classes
+ *              -Create the 4 big queues
+ *              -Manipulate the 4 queues
+ *          Assign default register values upon reading in instructions
+ *          Process information in the CPU
+ *              -Move data to and from registers and accumulator
+ *          Display Job Information to user (process ID, vales in register upon termination)
+ *          
+ * 
+ * Phase 3: Implement multi-threaded environment
+ *          Gather statistics about the various multi-CPU environments
+ *          Create grahps and report
  *
  */
 
@@ -164,6 +176,7 @@ namespace OPSYS_GUI_NThompson
                 scheduleAst.Visible = true;
                 return;
             }
+            ram.ClearRAM(instructions);
         }//end "go" button
 
         private void helpButton_Click(object sender, EventArgs e)

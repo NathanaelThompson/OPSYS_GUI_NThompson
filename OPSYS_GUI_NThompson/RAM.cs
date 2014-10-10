@@ -52,5 +52,10 @@ namespace OPSYS_GUI_NThompson
         {
             return instructionsInRAM.Count;
         }
+
+        public void ClearRAM(List<Instruction> instructions)
+        {
+            instructions.Clear();
+        }
     }
 }
