@@ -13,6 +13,7 @@ namespace OPSYS_GUI_NThompson
         int size;
         public static List<Instruction> instructionsInRAM;
         
+        
         //constructor with size parameter
         public RAMObject(int sz)
         {
@@ -25,14 +26,51 @@ namespace OPSYS_GUI_NThompson
         {
             size = 100;
             instructionsInRAM = new List<Instruction>(size);
+            
         }
 
+        //UNFINISHED, DO NOT CALL
+        public void CompactRAM()
+        {
+            int[] emptyAddressArr = new int[GetRAMSize()];
+            int address = 0;
+            foreach (Instruction inst in instructionsInRAM)
+            {
+                if (inst.Equals(null))
+                {
+                    MoveJobInRAM(inst.GetPCB(inst.GetJobID()), address);
+                    address++;
+                }
+                else
+                {
+                    address++;
+                }
+            }
+        }
+        public void MoveJobInRAM(ProcessControlBlock pcb, int baseAddress)
+        {
+            List<Instruction> instructionsToMove = pcb.GetInstructions(pcb.GetPCBID());
+            foreach (Instruction inst in instructionsToMove)
+            {
+                instructionsInRAM.Insert(baseAddress, inst);
+            }
+        }
         //adds instructions to RAM
         public void AddInstructionsToRAM(List<Instruction> instructs)
         {
             foreach (Instruction inst in instructs)
             {
                 instructionsInRAM.Add(inst);
+            }
+        }
+
+        //Add single set of instructions to RAM
+        public void AddJobToRAM(ProcessControlBlock pcb)
+        {
+            List<Instruction> instructsToAdd = pcb.GetInstructions(pcb.GetPCBID());
+            foreach (Instruction instruction in instructsToAdd)
+            {
+                instructionsInRAM.Add(instruction);
             }
         }
         //Gets instructions in RAM
@@ -53,6 +91,14 @@ namespace OPSYS_GUI_NThompson
             return instructionsInRAM.Count;
         }
 
+        public void RemoveJobFromRAM(ProcessControlBlock pcb)
+        {
+            List<Instruction> instToRemove = pcb.GetInstructions(pcb.GetPCBID());
+            foreach (Instruction inst in instToRemove)
+            {
+                instructionsInRAM.Remove(inst);
+            }
+        }
         public void ClearRAM(List<Instruction> instructions)
         {
             instructions.Clear();

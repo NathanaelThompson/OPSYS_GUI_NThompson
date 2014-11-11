@@ -34,7 +34,20 @@ namespace OPSYS_GUI_NThompson
         {
             return jobID;
         }
-        
+        public ProcessControlBlock GetPCB(int id)
+        {
+            ProcessControlBlock pcbToReturn = new ProcessControlBlock();
+            foreach (ProcessControlBlock pcb in StartForm.pcbList)
+            {
+                if (id == pcb.GetPCBID())
+                {
+                    pcbToReturn = pcb;
+                    break;
+                }
+                
+            }
+            return pcbToReturn;
+        }
         public int GetInstructionLine()
         {
             return instructionLine;

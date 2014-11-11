@@ -154,7 +154,7 @@ namespace OPSYS_GUI_NThompson
                     int lastIndex = sortedPCBList.IndexOf(pcb);
                     for (int i = lastIndex; i < sortedPCBList.Count; i++)
                     {
-                        StartForm.waitQueueSF.Enqueue(sortedPCBList[i]);
+                        //StartForm.waitQueueSF.Enqueue(sortedPCBList[i]);
                     }
                     sortedPCBList.RemoveRange(lastIndex, (sortedPCBList.Count - lastIndex));
                     return sortedPCBList;
@@ -286,7 +286,7 @@ namespace OPSYS_GUI_NThompson
                     
                     for (int i = lastIndex; i < sortedPCBList.Count; i++)
                     {
-                        StartForm.waitQueueSF.Enqueue(sortedPCBList[i]);
+                        //StartForm.waitQueueSF.Enqueue(sortedPCBList[i]);
                     }
 
                     sortedPCBList.RemoveRange(lastIndex, (sortedPCBList.Count - lastIndex));

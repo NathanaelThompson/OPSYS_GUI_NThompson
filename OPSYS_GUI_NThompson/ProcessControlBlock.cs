@@ -11,21 +11,38 @@ namespace OPSYS_GUI_NThompson
         //PCB members
         string jobName;
         int jobLength, jobPriority, pcbID;
-        bool jobFinished;
         public ProgramState programState
         {
             get;
             set;
         }
+        public string destination
+        {
+            get;
+            set;
+        }
+        public string location
+        {
+            get;
+            set;
+        }
+        public int baseAddress
+        {
+            get;
+            set;
+        }
+        public int limitAddress
+        {
+            get;
+            set;
+        }
         //overloadded Constructor
-        public ProcessControlBlock(string name, int length, int priority, int id, bool terminated)
+        public ProcessControlBlock(string name, int length, int priority, int id)
         {
             jobName = name;
             jobLength = length;
             jobPriority = priority;
             pcbID = id;
-            jobFinished = terminated;
-            
         }
 
         //default constructor
@@ -68,10 +85,7 @@ namespace OPSYS_GUI_NThompson
             //return all instructions with matching ID
             return tempInstructions;
         }
-        public bool GetJobCompletionStatus()
-        {
-            return jobFinished;
-        }
+        
         public void SetPCBJobName(string name)
         {
             jobName = name;
@@ -88,10 +102,7 @@ namespace OPSYS_GUI_NThompson
         {
             pcbID = id;
         }
-        public void SetJobCompletionStatus(bool terminated)
-        {
-            jobFinished = terminated;
-        }
+        
         #endregion
     }
 }

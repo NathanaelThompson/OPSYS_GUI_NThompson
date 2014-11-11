@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace OPSYS_GUI_NThompson
 {
@@ -14,60 +15,70 @@ namespace OPSYS_GUI_NThompson
      */
     public class Dispatcher
     {
-        private Queue<ProcessControlBlock> readyQD, waitQD, ioQD, termQD;
+        public static Queue<ProcessControlBlock> readyQ, waitQ, ioQ, termQ;
 
-        //Whenever the dispatcher is created, it grabs the state
-        //of the PCBs as they were arranged by the LTS
         public Dispatcher()
         {
-            readyQD = StartForm.readyQueueSF;
-            waitQD = StartForm.waitQueueSF;
-            ioQD = StartForm.ioQueueSF;
-            termQD = StartForm.termQueueSF;
+            readyQ = new Queue<ProcessControlBlock>(10);
+            waitQ = new Queue<ProcessControlBlock>(10);
+            ioQ = new Queue<ProcessControlBlock>(10);
+            termQ = new Queue<ProcessControlBlock>(200);
         }
-        public Queue<ProcessControlBlock> readyQueueD
+
+        //The following functions CANNOT STAY LIKE THEY ARE, THEY MUST BE CHANGED
+        public void AddToReadyQ(ProcessControlBlock pcb)
         {
-            get
+            if (readyQ.Count >= 10)
             {
-                return readyQD;
+                AddToWaitQ(pcb);
             }
-            set
+            else
             {
-                readyQueueD = readyQD;
+                readyQ.Enqueue(pcb);
             }
+            
         }
-        public Queue<ProcessControlBlock> waitQueueD
+
+        public void AddToWaitQ(ProcessControlBlock pcb)
         {
-            get
+            if (waitQ.Count >= 10)
             {
-                return waitQD;
+                return;
             }
-            set
+            else
             {
-                waitQueueD = waitQD;
+                waitQ.Enqueue(pcb);
             }
         }
-        public Queue<ProcessControlBlock> ioQueueD
+
+        public void AddToIOQ(ProcessControlBlock pcb)
         {
-            get
+            if (ioQ.Count >= 10)
             {
-                return ioQD;
+                return;
             }
-            set
+            else
             {
-                ioQueueD = ioQD;
+                ioQ.Enqueue(pcb);
             }
         }
-        public Queue<ProcessControlBlock> termQueueD
+
+        public void AddToTermQ(ProcessControlBlock pcb)
         {
-            get
+            if (termQ.Count >= 200)
             {
-                return termQD;
+                MessageBox.Show("BLUE SCREEN OF DEATH." + "\nProcess ID: " +
+                            pcb.GetPCBID() + 
+                            "\nRestart the OS to continue.",
+                            "What? No, it's totally blue. Shut up, you broke my thing. You are a thing breaker. Jerk.",
+                            MessageBoxButtons.OK, MessageBoxIcon.Stop);
             }
-            set
+            else
             {
-                termQueueD = termQD;
+                termQ.Enqueue(pcb);
             }
         }
+
+
     }
 }

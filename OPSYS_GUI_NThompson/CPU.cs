@@ -10,8 +10,8 @@ namespace OPSYS_GUI_NThompson
     public class CPU
     {
         private static int register1, register2, register3, register4, accumulator, programCounter;
-        static ProcessControlBlock currentPCB = StartForm.readyQueueSF.Dequeue();
-        List<Instruction> currentInst = currentPCB.GetInstructions(currentPCB.GetPCBID());
+        //static ProcessControlBlock currentPCB = StartForm.readyQueueSF.Dequeue();
+        //List<Instruction> currentInst = currentPCB.GetInstructions(currentPCB.GetPCBID());
         bool endOfInstructionsFlag = false;
         public static int cpuCycles
         {
@@ -133,17 +133,17 @@ namespace OPSYS_GUI_NThompson
                         break;
                     case "_rd"://read, send job to io queue for X cycles
                         //this needs to be reworked to include cycle values
-                        StartForm.dispatch.ioQueueD.Enqueue(pcb);
+                        //StartForm.dispatch.ioQueueD.Enqueue(pcb);
                         restartFlag = true;
                         break;
                     case "_wr"://write, send job to io queue for X cycles
                         //this needs to be reworked
-                        StartForm.dispatch.ioQueueD.Enqueue(pcb);
+                        //StartForm.dispatch.ioQueueD.Enqueue(pcb);
                         restartFlag = true;
                         break;
                     case "_wt"://wait, send job to wait queue
                         //this needs to be reworked
-                        StartForm.dispatch.waitQueueD.Enqueue(pcb);
+                        //StartForm.dispatch.waitQueueD.Enqueue(pcb);
                         restartFlag = true;
                         break;
                     case "sto"://store value in acc, done
@@ -173,7 +173,7 @@ namespace OPSYS_GUI_NThompson
                         pcb.programState = currentProgramState;
 
                         //this needs to be reworked
-                        StartForm.readyQueueSF.Enqueue(pcb);
+                        //StartForm.readyQueueSF.Enqueue(pcb);
                         break;
                     case "err"://error condition, save state to PCB and terminate program
                         instIndex = 0;    
@@ -186,17 +186,22 @@ namespace OPSYS_GUI_NThompson
                         pcb.programState = currentProgramState;
 
                         //this needs to be reworked
-                        StartForm.dispatch.termQueueD.Enqueue(pcb);
+                        //StartForm.dispatch.termQueueD.Enqueue(pcb);
                         break;
                     default: //if SOMEHOW this case is called, it needs to be handled immediately
-                        MessageBox.Show("One mothefucker of an error. Restart the OS to continue.",
-                            "Holy shit how did this happen??", MessageBoxButtons.OK, MessageBoxIcon.Stop);
+                        MessageBox.Show("BLUE SCREEN OF DEATH."+"\nProcess ID: " + 
+                            instID + "\nInstruction Type: "+
+                            instType + "\nLine of Execution: " +
+                            inst_currentLine+" Restart the OS to continue.",
+                            "What? No, it's totally blue. Shut up, you broke my thing. You are a thing breaker. Jerk.",
+                            MessageBoxButtons.OK, MessageBoxIcon.Stop);
                         restartFlag = true;
                         break;
                 }
                 cpuCycles++;
             }
         }
+
         public void Recall(Instruction inst)
         {
             string register1 = inst.GetRegister1();
@@ -586,7 +591,7 @@ namespace OPSYS_GUI_NThompson
         {
             while (!(endOfInstructionsFlag))
             {
-                FetchDecodeAndExecute(currentPCB);
+                //FetchDecodeAndExecute(currentPCB);
             }
         }
         #region Properties

@@ -88,6 +88,9 @@
  *          
  *          UGH. Found a soul crushing error in the Math portion of my CPU. Gonna be a long day...
  *          Ok, problem fixed.  Everything that depends on the Queues needs to be rewritten.
+ *          
+ *          PCBs/RAM need/s an addressing system.  There has to be so much swapping and compacting that I really need to try to simplify
+ *          the process.
  */
 using System;
 using System.Collections.Generic;
@@ -114,55 +117,7 @@ namespace OPSYS_GUI_NThompson
         public static HardDrive hdd;
         public static Dispatcher dispatch;
         public CPU cpu;
-        private static Queue<ProcessControlBlock> readyQSF = new Queue<ProcessControlBlock>(100);
-        private static Queue<ProcessControlBlock> waitQSF = new Queue<ProcessControlBlock>(100);
-        private static Queue<ProcessControlBlock> ioQSF = new Queue<ProcessControlBlock>(100);
-        private static Queue<ProcessControlBlock> termQSF = new Queue<ProcessControlBlock>(100);
         
-        public static Queue<ProcessControlBlock> readyQueueSF
-        {
-            get
-            {
-                return readyQSF;
-            }
-            set
-            {
-                readyQSF = readyQueueSF;
-            }
-        }
-        public static Queue<ProcessControlBlock> waitQueueSF
-        {
-            get
-            {
-                return waitQSF;
-            }
-            set
-            {
-                waitQSF = waitQueueSF;
-            }
-        }
-        public static Queue<ProcessControlBlock> ioQueueSF
-        {
-            get
-            {
-                return ioQSF;
-            }
-            set
-            {
-                ioQSF = ioQueueSF;
-            }
-        }
-        public static Queue<ProcessControlBlock> termQueueSF
-        {
-            get
-            {
-                return termQSF;
-            }
-            set
-            {
-                termQSF = termQueueSF;
-            }
-        }
         #endregion
         public StartForm()
         {
@@ -258,14 +213,8 @@ namespace OPSYS_GUI_NThompson
             }
             #endregion
 
-            
-            foreach (ProcessControlBlock pcb in sortedPCBList)
-            {
-                readyQSF.Enqueue(pcb);
-            }
-
-            
             BigLoop();
+
         }//end "go" button
         public static int bigLoopCycles
         {
