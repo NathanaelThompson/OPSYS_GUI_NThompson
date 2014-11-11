@@ -1,0 +1,1 @@
+C:\Users\nate\Documents\Visual Studio 2012\Projects\CSharpOnVS2012\OPSYS_GUI_NThompson\OPSYS_GUI_NThompson\bin\Debug\WindowsApplication.exe.config

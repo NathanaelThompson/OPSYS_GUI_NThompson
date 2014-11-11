@@ -36,8 +36,6 @@ namespace OPSYS_GUI_NThompson
                 }
                 else
                 {
-                    System.Windows.Forms.MessageBox.Show("RAM filled.", "Success!",
-                        System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Information);
                     return;
                 }
 
@@ -45,7 +43,7 @@ namespace OPSYS_GUI_NThompson
             }
         }
 
-        public void ShortestJobFirst(List<ProcessControlBlock> unsortedPCB)
+        public List<ProcessControlBlock> ShortestJobFirst(List<ProcessControlBlock> unsortedPCB)
         {
             int[,] lengths_ids = new int[unsortedPCB.Count,2];
             for (int i = 0; i < unsortedPCB.Count; i++)
@@ -151,17 +149,22 @@ namespace OPSYS_GUI_NThompson
                 {
                     StartForm.ram.AddInstructionsToRAM(tempInstructions);
                 }
-                else //once RAM is filled, display a Success message to the user
+                else 
                 {
-                    System.Windows.Forms.MessageBox.Show("RAM filled.", "Success!",
-                        System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Information);
-                    return;
+                    int lastIndex = sortedPCBList.IndexOf(pcb);
+                    for (int i = lastIndex; i < sortedPCBList.Count; i++)
+                    {
+                        StartForm.waitQueueSF.Enqueue(sortedPCBList[i]);
+                    }
+                    sortedPCBList.RemoveRange(lastIndex, (sortedPCBList.Count - lastIndex));
+                    return sortedPCBList;
                 }
                 totalLOI += lengthOfJob;
             }
+            return sortedPCBList;
         }
 
-        public void PrioritySort(List<ProcessControlBlock> unsortedPCB)
+        public List<ProcessControlBlock> PrioritySort(List<ProcessControlBlock> unsortedPCB)
         {
             //adding priorites and IDs of unsortedPCB to an array
             int[,] priorities_ids = new int[unsortedPCB.Count, 2];
@@ -279,12 +282,19 @@ namespace OPSYS_GUI_NThompson
                 }
                 else
                 {
-                    System.Windows.Forms.MessageBox.Show("RAM filled.", "Success!",
-                        System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Information);
-                    return;
+                    int lastIndex = sortedPCBList.IndexOf(pcb);
+                    
+                    for (int i = lastIndex; i < sortedPCBList.Count; i++)
+                    {
+                        StartForm.waitQueueSF.Enqueue(sortedPCBList[i]);
+                    }
+
+                    sortedPCBList.RemoveRange(lastIndex, (sortedPCBList.Count - lastIndex));
+                    return sortedPCBList;
                 }
                 totalLOI += lengthOfJob;
             }
+            return sortedPCBList;
         }
         
     }

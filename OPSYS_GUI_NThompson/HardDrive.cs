@@ -55,7 +55,7 @@ namespace OPSYS_GUI_NThompson
                 MessageBox.Show("File error, please select a file.",
                     "Input Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 HardDrive tempDrive = new HardDrive();
-                rawData = File.ReadAllText(tempDrive.FileSelector());
+                rawData = File.ReadAllText(tempDrive.InstructionSelector());
             }
 
             string[] sanitizedInput = rawData.Split(delimiters,StringSplitOptions.RemoveEmptyEntries);
@@ -115,7 +115,7 @@ namespace OPSYS_GUI_NThompson
         {
             return pcbList;
         }
-        public string FileSelector()
+        public string InstructionSelector()
         {
             //This function grabs the selected file from an OpenFileDialog
             //If no file is selected, filePath is left at the default, "ugradPart1.txt"

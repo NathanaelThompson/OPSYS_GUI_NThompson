@@ -3,13 +3,77 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace OPSYS_GUI_NThompson
 {
     public class CPU
     {
-        int register1, register2, register3, register4, accumulator, programCounter;
-
+        private static int register1, register2, register3, register4, accumulator, programCounter;
+        static ProcessControlBlock currentPCB = StartForm.readyQueueSF.Dequeue();
+        List<Instruction> currentInst = currentPCB.GetInstructions(currentPCB.GetPCBID());
+        bool endOfInstructionsFlag = false;
+        public static int cpuCycles
+        {
+            get;
+            set;
+        }
+        public int register1Value
+        {
+            get
+            {
+                return register1;
+            }
+            set
+            {
+                register1 = register1Value;
+            }
+        }
+        public int register2Value
+        {
+            get
+            {
+                return register2;
+            }
+            set
+            {
+                register2 = register2Value;
+            }
+        }
+        public int register3Value
+        {
+            get
+            {
+                return register3;
+            }
+            set
+            {
+                register3 = register3Value;
+            }
+        }
+        public int register4Value
+        {
+            get
+            {
+                return register4;
+            }
+            set
+            {
+                register4 = register4Value;
+            }
+        }
+        public int accumulatorValue
+        {
+            get
+            {
+                return accumulator;
+            }
+            set
+            {
+                accumulator = accumulatorValue;
+            }
+        }
+        
         public CPU()
         {
             register1 = 1;
@@ -29,45 +93,569 @@ namespace OPSYS_GUI_NThompson
             programCounter = pc;
         }
 
-        public void SetRegister1(int value)
+        
+        public void FetchDecodeAndExecute(ProcessControlBlock pcb)
         {
-            register1 = value;
+            //Dat one line fetch
+            List<Instruction> currentInstructions = pcb.GetInstructions(pcb.GetPCBID());
+
+            ProgramState currentProgramState = pcb.programState;
+            bool restartFlag = false;
+            int instIndex = 0;
+            while (!(restartFlag))
+            {
+
+                string inst_register1 = currentInstructions[instIndex].GetRegister1();
+                string inst_register2 = currentInstructions[instIndex].GetRegister2();
+                int inst_currentLine = instIndex;
+                string instType = currentInstructions[instIndex].GetInstructionType();
+                int instructionValue = currentInstructions[instIndex].GetInstructionValue();
+                int instID = currentInstructions[instIndex].GetJobID();
+                
+                //temporary lookup table
+                switch (instType)
+                {
+                    case "add"://add two registers, done
+                        MathDecisionFunction(currentInstructions[instIndex]);
+                        instIndex++;
+                        break;
+                    case "sub"://subtract two registers, done
+                        MathDecisionFunction(currentInstructions[instIndex]);
+                        instIndex++;
+                        break;
+                    case "mul"://multiply, done
+                        MathDecisionFunction(currentInstructions[instIndex]);
+                        instIndex++;
+                        break;
+                    case "div"://divide, done
+                        MathDecisionFunction(currentInstructions[instIndex]);
+                        instIndex++;
+                        break;
+                    case "_rd"://read, send job to io queue for X cycles
+                        //this needs to be reworked to include cycle values
+                        StartForm.dispatch.ioQueueD.Enqueue(pcb);
+                        restartFlag = true;
+                        break;
+                    case "_wr"://write, send job to io queue for X cycles
+                        //this needs to be reworked
+                        StartForm.dispatch.ioQueueD.Enqueue(pcb);
+                        restartFlag = true;
+                        break;
+                    case "_wt"://wait, send job to wait queue
+                        //this needs to be reworked
+                        StartForm.dispatch.waitQueueD.Enqueue(pcb);
+                        restartFlag = true;
+                        break;
+                    case "sto"://store value in acc, done
+                        accumulatorValue = instructionValue;
+                        instIndex++;
+                        break;
+                    case "rcl"://take acc value and assign to register, done
+                        Recall(currentInstructions[instIndex]);
+                        instIndex++;
+                        break;
+                    case "nul"://reset registers to default value, done
+                        register1 = 1;
+                        register2 = 3;
+                        register3 = 5;
+                        register4 = 7;
+                        accumulator = 9;
+                        instIndex++;
+                        break;
+                    case "stp"://halt execution, save state, return job to RQ
+                        instIndex = 0;
+                        currentProgramState.lineOfExecution = inst_currentLine;
+                        currentProgramState.instructionType = instType;
+                        currentProgramState.instructionValue = instructionValue;
+                        currentProgramState.jobID = instID;
+                        currentProgramState.register1 = inst_register1;
+                        currentProgramState.register2 = inst_register2;
+                        pcb.programState = currentProgramState;
+
+                        //this needs to be reworked
+                        StartForm.readyQueueSF.Enqueue(pcb);
+                        break;
+                    case "err"://error condition, save state to PCB and terminate program
+                        instIndex = 0;    
+                        currentProgramState.lineOfExecution = inst_currentLine;
+                        currentProgramState.instructionType = instType;
+                        currentProgramState.instructionValue = instructionValue;
+                        currentProgramState.jobID = instID;
+                        currentProgramState.register1 = inst_register1;
+                        currentProgramState.register2 = inst_register2;
+                        pcb.programState = currentProgramState;
+
+                        //this needs to be reworked
+                        StartForm.dispatch.termQueueD.Enqueue(pcb);
+                        break;
+                    default: //if SOMEHOW this case is called, it needs to be handled immediately
+                        MessageBox.Show("One mothefucker of an error. Restart the OS to continue.",
+                            "Holy shit how did this happen??", MessageBoxButtons.OK, MessageBoxIcon.Stop);
+                        restartFlag = true;
+                        break;
+                }
+                cpuCycles++;
+            }
         }
-        public void SetRegister2(int value)
+        public void Recall(Instruction inst)
         {
-            register2 = value;
+            string register1 = inst.GetRegister1();
+            switch (register1)
+            {
+                case "A":
+                    register1Value = accumulatorValue;
+                    break;
+                case "B":
+                    register2Value = accumulatorValue;
+                    break;
+                case "C":
+                    register3Value = accumulatorValue;
+                    break;
+                case "D":
+                    register4Value = accumulatorValue;
+                    break;
+                default:
+                    break;
+            }
         }
-        public void SetRegister3(int value)
+        public void MathDecisionFunction(Instruction inst)
         {
-            register3 = value;
+            string register1 = inst.GetRegister1();
+            string register2 = inst.GetRegister2();
+            string instType = inst.GetInstructionType();
+            int instValue = inst.GetInstructionValue();
+
+            switch (instType)
+            {
+                case "add":
+                    Add(register1, register2, instValue);
+                    break;
+                case "sub":
+                    Subtract(register1, register2, instValue);
+                    break;
+                case "mul":
+                    Multiply(register1, register2, instValue);
+                    break;
+                case "div":
+                    Divide(register1, register2, instValue);
+                    break;
+                default:
+                    break;
+            }
         }
-        public void SetRegister4(int value)
+
+        //For anyone about to read this code, I am so sorry...
+        public void Add(string reg1,string reg2, int instValue)
         {
-            register4 = value;
+            switch (reg1)
+            {
+                case "A":
+                    switch (reg2)
+                    {
+                        case "A":
+                            accumulatorValue = register1Value + register1Value + instValue;
+                            break;
+                        case "B":
+                            accumulatorValue = register1Value + register2Value + instValue;
+                            break;
+                        case "C":
+                            accumulatorValue = register1Value + register3Value + instValue;
+                            break;
+                        case "D":
+                            accumulatorValue = register1Value + register4Value + instValue;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case "B":
+                    switch (reg2)
+                    {
+                        case "A":
+                            accumulatorValue = register2Value + register1Value + instValue;
+                            break;
+                        case "B":
+                            accumulatorValue = register2Value + register2Value + instValue;
+                            break;
+                        case "C":
+                            accumulatorValue = register2Value + register3Value + instValue;
+                            break;
+                        case "D":
+                            accumulatorValue = register2Value + register4Value + instValue;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case "C":
+                    switch (reg2)
+                    {
+                        case "A":
+                            accumulatorValue = register3Value + register1Value + instValue;
+                            break;
+                        case "B":
+                            accumulatorValue = register3Value + register2Value + instValue;
+                            break;
+                        case "C":
+                            accumulatorValue = register3Value + register3Value + instValue;
+                            break;
+                        case "D":
+                            accumulatorValue = register3Value + register4Value + instValue;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case "D":
+                    switch (reg2)
+                    {
+                        case "A":
+                            accumulatorValue = register4Value + register1Value + instValue;
+                            break;
+                        case "B":
+                            accumulatorValue = register4Value + register2Value + instValue;
+                            break;
+                        case "C":
+                            accumulatorValue = register4Value + register3Value + instValue;
+                            break;
+                        case "D":
+                            accumulatorValue = register4Value + register4Value + instValue;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                default:
+                    break;
+            }
         }
-        public void SetAccumulator(int value)
+        public void Multiply(string reg1,string reg2, int instValue)
         {
-            accumulator = value;
+
+            switch (reg1)
+            {
+                case "A":
+                    switch (reg2)
+                    {
+                        case "A":
+                            accumulatorValue = (register1Value * register1Value) + instValue;
+                            break;
+                        case "B":
+                            accumulatorValue = (register1Value * register2Value) + instValue;
+                            break;
+                        case "C":
+                            accumulatorValue = (register1Value * register3Value) + instValue;
+                            break;
+                        case "D":
+                            accumulatorValue = (register1Value * register4Value) + instValue;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case "B":
+                    switch (reg2)
+                    {
+                        case "A":
+                            accumulatorValue = (register2Value * register1Value) + instValue;
+                            break;
+                        case "B":
+                            accumulatorValue = (register2Value * register2Value) + instValue;
+                            break;
+                        case "C":
+                            accumulatorValue = (register2Value * register3Value) + instValue;
+                            break;
+                        case "D":
+                            accumulatorValue = (register2Value * register4Value) + instValue;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case "C":
+                    switch (reg2)
+                    {
+                        case "A":
+                            accumulatorValue = (register3Value * register1Value) + instValue;
+                            break;
+                        case "B":
+                            accumulatorValue = (register3Value * register2Value) + instValue;
+                            break;
+                        case "C":
+                            accumulatorValue = (register3Value * register3Value) + instValue;
+                            break;
+                        case "D":
+                            accumulatorValue = (register3Value * register4Value) + instValue;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case "D":
+                    switch (reg2)
+                    {
+                        case "A":
+                            accumulatorValue = (register4Value * register1Value) + instValue;
+                            break;
+                        case "B":
+                            accumulatorValue = (register4Value * register2Value) + instValue;
+                            break;
+                        case "C":
+                            accumulatorValue = (register4Value * register3Value) + instValue;
+                            break;
+                        case "D":
+                            accumulatorValue = (register4Value * register4Value) + instValue;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                default:
+                    break;
+            }
         }
-        public int GetRegister1()
+        public void Subtract(string reg1, string reg2, int instValue)
         {
-            return register1;
+            switch (reg1)
+            {
+                case "A":
+                    switch (reg2)
+                    {
+                        case "A":
+                            accumulatorValue = (register1Value - register1Value) + instValue;
+                            break;
+                        case "B":
+                            accumulatorValue = (register1Value - register2Value) + instValue;
+                            break;
+                        case "C":
+                            accumulatorValue = (register1Value - register3Value) + instValue;
+                            break;
+                        case "D":
+                            accumulatorValue = (register1Value - register4Value) + instValue;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case "B":
+                    switch (reg2)
+                    {
+                        case "A":
+                            accumulatorValue = (register2Value - register1Value) + instValue;
+                            break;
+                        case "B":
+                            accumulatorValue = (register2Value - register2Value) + instValue;
+                            break;
+                        case "C":
+                            accumulatorValue = (register2Value - register3Value) + instValue;
+                            break;
+                        case "D":
+                            accumulatorValue = (register2Value - register4Value) + instValue;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case "C":
+                    switch (reg2)
+                    {
+                        case "A":
+                            accumulatorValue = (register3Value - register1Value) + instValue;
+                            break;
+                        case "B":
+                            accumulatorValue = (register3Value - register2Value) + instValue;
+                            break;
+                        case "C":
+                            accumulatorValue = (register3Value - register3Value) + instValue;
+                            break;
+                        case "D":
+                            accumulatorValue = (register3Value - register4Value) + instValue;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case "D":
+                    switch (reg2)
+                    {
+                        case "A":
+                            accumulatorValue = (register4Value - register1Value) + instValue;
+                            break;
+                        case "B":
+                            accumulatorValue = (register4Value - register2Value) + instValue;
+                            break;
+                        case "C":
+                            accumulatorValue = (register4Value - register3Value) + instValue;
+                            break;
+                        case "D":
+                            accumulatorValue = (register4Value - register4Value) + instValue;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                default:
+                    break;
+            }
         }
-        public int GetRegister2()
+        public void Divide(string reg1, string reg2, int instValue)
         {
-            return register2;
+            switch (reg1)
+            {
+                case "A":
+                    switch (reg2)
+                    {
+                        case "A":
+                            accumulatorValue = (register1Value / register1Value) + instValue;
+                            break;
+                        case "B":
+                            accumulatorValue = (register1Value / register2Value) + instValue;
+                            break;
+                        case "C":
+                            accumulatorValue = (register1Value / register3Value) + instValue;
+                            break;
+                        case "D":
+                            accumulatorValue = (register1Value / register4Value) + instValue;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case "B":
+                    switch (reg2)
+                    {
+                        case "A":
+                            accumulatorValue = (register2Value / register1Value) + instValue;
+                            break;
+                        case "B":
+                            accumulatorValue = (register2Value / register2Value) + instValue;
+                            break;
+                        case "C":
+                            accumulatorValue = (register2Value / register3Value) + instValue;
+                            break;
+                        case "D":
+                            accumulatorValue = (register2Value / register4Value) + instValue;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case "C":
+                    switch (reg2)
+                    {
+                        case "A":
+                            accumulatorValue = (register2Value / register1Value) + instValue;
+                            break;
+                        case "B":
+                            accumulatorValue = (register2Value / register2Value) + instValue;
+                            break;
+                        case "C":
+                            accumulatorValue = (register2Value / register3Value) + instValue;
+                            break;
+                        case "D":
+                            accumulatorValue = (register2Value / register4Value) + instValue;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case "D":
+                    switch (reg2)
+                    {
+                        case "A":
+                            accumulatorValue = (register3Value / register1Value) + instValue;
+                            break;
+                        case "B":
+                            accumulatorValue = (register3Value / register2Value) + instValue;
+                            break;
+                        case "C":
+                            accumulatorValue = (register3Value / register3Value) + instValue;
+                            break;
+                        case "D":
+                            accumulatorValue = (register3Value / register4Value) + instValue;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                default:
+                    break;
+            }
         }
-        public int GetRegister3()
+        public void Run()
         {
-            return register3;
+            while (!(endOfInstructionsFlag))
+            {
+                FetchDecodeAndExecute(currentPCB);
+            }
         }
-        public int GetRegister4()
+        #region Properties
+        public int reg1
         {
-            return register4;
+            get
+            {
+                return register1;
+            }
+            set
+            {
+                reg1 = register1;
+            }
         }
-        public int GetAccumulator()
+        public int reg2
         {
-            return accumulator;
+            get
+            {
+                return register2;
+            }
+            set
+            {
+                reg2 = register2;
+            }
         }
+        public int reg3
+        {
+            get
+            {
+                return register3;
+            }
+            set
+            {
+                reg3 = register3;
+            }
+        }
+        public int reg4
+        {
+            get
+            {
+                return register4;
+            }
+            set
+            {
+                reg4 = register4;
+            }
+        }
+        public int acc
+        {
+            get
+            {
+                return accumulator;
+            }
+            set
+            {
+                acc = accumulator;
+            }
+        }
+        public int progCount
+        {
+            get
+            {
+                return programCounter;
+            }
+            set
+            {
+                progCount = programCounter;
+            }
+        }
+        #endregion
     }
 }
