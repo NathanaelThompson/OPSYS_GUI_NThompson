@@ -21,13 +21,13 @@
  *          Display information about instructions to user. (COMPLETED)
  * 
  * Phase 2:  Jobs                                                                                  Instructions
- *         -------------------------------------------------------------------------------------------------------------------------------------------------
- *         | Moves jobs from LTS to Ready/Wait queues (COMPLETE)                                 | Moves instructions from RAM to CPU (IN PROGRESS)        |
- *         | Create Dispatcher class (IN PROGRESS)                                               | Create CPU class (IN PROGRESS)                          |
- *         | Display Job Information to user (process ID, values in register upon termination)   | Process information in the CPU (fetch, decode, execute) |
- *         |                                                                                     |   -Move data to and from registers and accumulator      |
- *         |                                                                                     |                                                         |
- *         -------------------------------------------------------------------------------------------------------------------------------------------------
+ *         --------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ *         | Moves jobs from LTS to Ready/Wait queues (COMPLETE)                                 | Moves instructions from RAM to CPU (IN PROGRESS)                           |
+ *         | Create Dispatcher class (IN PROGRESS)                                               | Create CPU class (IN PROGRESS)                                             |
+ *         | Display Job Information to user (process ID, values in register upon termination)   | Process information in the CPU (fetch, decode, execute) (IN PROGRESS)      |
+ *         |                                                                                     |   -Move data to and from registers and accumulator                         |
+ *         |                                                                                     | Compact RAM at will (COMPLETEDish)                                         |
+ *         --------------------------------------------------------------------------------------------------------------------------------------------------------------------
  * Phase 3: Implement multi-threaded environment
  *          Gather statistics about the various multi-CPU environments
  *          Create graphs and report
@@ -92,8 +92,17 @@
  *          PCBs/RAM need/s an addressing system.  There has to be so much swapping and compacting that I really need to try to simplify
  *          the process.
  *          
- *          Functions for re-arranging RAM are in place.  I haven't tested anything in over 700 lines of code.  I'm just rushing
- *          to get the idea on paper (so to speak).
+ *          Functions for re-arranging RAM are in place.  I haven't tested anything in over 700 lines of code (definitely not true anymore).
+ *          I'm just rushing to get the idea on paper (so to speak).
+ *          
+ * 11/12/14:The word today is: Dispatcher. Dispatcher, and going to class. 
+ * 
+ *          My kitten is so freakin adorable. Hard not to get distracted.
+ *          Keep finding errors in the Math function.  Small, tiny, insignificant mistakes that crash EVERYTHING.
+ *          
+ *          Lots of progress today so far.  Jobs can be moved in both directions all the way from the hard drive to RAM. However,
+ *          there is a pretty big, pretty easy to fix bug in the FCFS algorithm.
+ *          
  */
 using System;
 using System.Collections.Generic;
@@ -118,11 +127,13 @@ namespace OPSYS_GUI_NThompson
         public static List<Instruction> instructions;
         public static List<ProcessControlBlock> pcbList;
         public static HardDrive hdd;
-        public static Dispatcher dispatch;
+        public static Dispatcher dispatch = new Dispatcher();
         public static CPUObject cpu;
+        public LongTermScheduler lts = new LongTermScheduler();
+        public int ltsAlg;
 
         //For testing purposes only
-        public static List<ProcessControlBlock> sortedPCBListAll;
+        public static List<ProcessControlBlock> sortedPCBsInRAM;
         
         #endregion
         public StartForm()
@@ -142,7 +153,7 @@ namespace OPSYS_GUI_NThompson
             //List holding all PCB Objects created at the hard drive
             pcbList = new List<ProcessControlBlock>(hdd.GetPCBList());
             
-            #region RAM work
+            #region First Pass RAM work
             //if ramBox is empty, initialize RAM with size 100
             if (ramBox.Text == "")
             {
@@ -185,27 +196,29 @@ namespace OPSYS_GUI_NThompson
             }
             #endregion
 
-            #region LTS work
+            #region First Pass LTS work
             //New long term scheduler
-            LongTermScheduler lts = new LongTermScheduler();
 
             
             //Selecting and applying the scheduling algorithm
             if (scheduleCB.SelectedItem == null || scheduleCB.SelectedItem.ToString() == "First Come First Serve")
             {   //First Come First Serve
+                ltsAlg = 0;
                 scheduleAst.Visible = false;
                 lts.FirstComeFirstServe(pcbList);
-                sortedPCBListAll = pcbList;
+                sortedPCBsInRAM = pcbList;
             }
             else if (scheduleCB.SelectedItem.ToString() == "Shortest Job First")
             {   //Shortest Job First
+                ltsAlg = 1;
                 scheduleAst.Visible = false;
-                sortedPCBListAll = lts.ShortestJobFirst(pcbList);
+                sortedPCBsInRAM = lts.ShortestJobFirst(pcbList);
             }
             else if (scheduleCB.SelectedItem.ToString() == "Priority")
             {   //Priority
+                ltsAlg = 2;
                 scheduleAst.Visible = false;
-                sortedPCBListAll = lts.PrioritySort(pcbList);
+                sortedPCBsInRAM = lts.PrioritySort(pcbList);
             }
             else
             {
@@ -221,19 +234,60 @@ namespace OPSYS_GUI_NThompson
         }//end "go" button
 
         public int bigLoopCycles = 0;
+        Queue<ProcessControlBlock> pcbQueueHD;
+        List<ProcessControlBlock> pcbListToLTS;
         public void BigLoop()
         {
-            while (true)
+            cpu = new CPUObject();
+            //could be rewritten as a foreach loop
+            foreach (ProcessControlBlock pcb in sortedPCBsInRAM)
             {
                 ram.CompactRAM();
-                List<Instruction> nextJobInRAM = ram.GetJobInRAM(sortedPCBListAll[bigLoopCycles]);
-                ProcessControlBlock pcb = nextJobInRAM[0].GetPCB(nextJobInRAM[0].GetJobID());
-                dispatch = new Dispatcher();
-                cpu = new CPUObject();
-                dispatch.Dispatch(pcb);
+
+                //I don't the logic here, should change.
+                //List<Instruction> nextJobInRAM = ram.GetJobInRAM(sortedPCBListAll[bigLoopCycles]);
+                //ProcessControlBlock pcb = nextJobInRAM[0].GetPCB(nextJobInRAM[0].GetJobID());
+                ///////////////////////////////////////////////////////////////////////////
+
+                
+                dispatch.DispatchInitialQueue(pcb);
                 bigLoopCycles++;
-            }
-        }
+                cpu.FetchDecodeAndExecute();
+
+                //check the hard drive for jobs, then send to the LTS
+                pcbQueueHD = hdd.jobsWaitingHD;
+                pcbListToLTS = new List<ProcessControlBlock>(pcbQueueHD);
+
+                if (pcbListToLTS.Count <= 0)
+                {
+                    break;
+                }
+                else
+                {
+                    if (ltsAlg == 0)
+                    {
+                        lts.FirstComeFirstServe(pcbListToLTS);
+                    }
+                    else if (ltsAlg == 1)
+                    {
+                        lts.ShortestJobFirst(pcbListToLTS);
+                    }
+                    else if (ltsAlg == 2)
+                    {
+                        lts.PrioritySort(pcbListToLTS);
+                    }
+                    else
+                    {
+                        MessageBox.Show("BLUE SCREEN OF DEATH." +
+                            "\nLTS algorithm = " + ltsAlg +
+                            "\nRestart the OS to continue.",
+                            "What? No, it's totally blue. Shut up, you broke my thing. You are a thing breaker. Jerk.",
+                            MessageBoxButtons.OK, MessageBoxIcon.Stop);
+                        Application.Exit();
+                    }
+                }
+            }//end foreach
+        }//end BigLoop()
         private void helpButton_Click(object sender, EventArgs e)
         {
             string helpMessage = "If you press the 'Go' button, this program will use default values for processing.\n\n" +

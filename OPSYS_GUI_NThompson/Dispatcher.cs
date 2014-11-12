@@ -15,7 +15,7 @@ namespace OPSYS_GUI_NThompson
      */
     public class Dispatcher
     {
-        public static Queue<ProcessControlBlock> readyQ, waitQ, ioQ, termQ;
+        public Queue<ProcessControlBlock> readyQ, waitQ, ioQ, termQ;
 
         public Dispatcher()
         {
@@ -25,17 +25,17 @@ namespace OPSYS_GUI_NThompson
             termQ = new Queue<ProcessControlBlock>(200);
         }
 
-        public void Dispatch(ProcessControlBlock pcb)
+        public void DispatchInitialQueue(ProcessControlBlock pcb)
         {
             if (!(pcb.destination.Equals(null)))
             {
                 if (pcb.destination == "IO")
                 {
-                    AddToIOQ(pcb);
+                    AddToIOQ(pcb, pcb.waitCycles);
                 }
                 else if (pcb.destination == "Wait")
                 {
-                    AddToWaitQ(pcb);
+                    AddToWaitQ(pcb, 0);
                 }
                 else if (pcb.destination == "Ready")
                 {
@@ -43,17 +43,21 @@ namespace OPSYS_GUI_NThompson
                 }
                 else
                 {
-                    AddToWaitQ(pcb);
+                    AddToWaitQ(pcb, pcb.waitCycles);
                 }
             }
-            StartForm.cpu.FetchDecodeAndExecute(readyQ.Dequeue());
+            else
+            {
+                AddToReadyQ(pcb);
+            }
+            
         }
         
         public void AddToReadyQ(ProcessControlBlock pcb)
         {
             if (readyQ.Count >= 10)
             {
-                AddToWaitQ(pcb);
+                AddToWaitQ(pcb, 0);
             }
             else
             {
@@ -62,7 +66,7 @@ namespace OPSYS_GUI_NThompson
             
         }
 
-        public void AddToWaitQ(ProcessControlBlock pcb)
+        public void AddToWaitQ(ProcessControlBlock pcb, int waitCycles)
         {
             if (waitQ.Count >= 10)
             {
@@ -71,11 +75,18 @@ namespace OPSYS_GUI_NThompson
             }
             else
             {
-                waitQ.Enqueue(pcb);
+                if (waitCycles <= 0)
+                {
+                    AddToReadyQ(pcb);
+                }
+                else
+                {
+                    waitQ.Enqueue(pcb);
+                }
             }
         }
 
-        public void AddToIOQ(ProcessControlBlock pcb)
+        public void AddToIOQ(ProcessControlBlock pcb, int waitCycles)
         {
             if (ioQ.Count >= 10)
             {
@@ -88,7 +99,7 @@ namespace OPSYS_GUI_NThompson
             }
         }
 
-        public void AddToTermQ(ProcessControlBlock pcb)
+        public void AddToTermQ(ProcessControlBlock pcb, int waitCycles)
         {
             //Seriously, this should never EVER be true
             //I can't even imagine a scenario where the terminate queue reaches 
@@ -107,6 +118,53 @@ namespace OPSYS_GUI_NThompson
             }
         }
 
+        public ProcessControlBlock GetJobFromReadyQ()
+        {
+            if (readyQ.Count <= 0)
+            {
+                //signal that there are no more jobs
+                return null;
+            }
+            else
+            {
+                return readyQ.Dequeue();
+            }
+        }
+        public ProcessControlBlock GetJobFromWaitQ()
+        {
+            if (waitQ.Count <= 0)
+            {
+                return null;
+            }
+            else
+            {
+                return waitQ.Dequeue();
+            }
+        }
+        public ProcessControlBlock GetJobFromIOQ()
+        {
+            if (ioQ.Count <= 0)
+            {
+                return null;
+            }
+            else
+            {
+                return ioQ.Dequeue();
+            }
+        }
+        public void DecrementQueueTimes()
+        {
+            List<ProcessControlBlock> currentPCBsWait = new List<ProcessControlBlock>(waitQ);
+            List<ProcessControlBlock> currentPCBsIO = new List<ProcessControlBlock>(ioQ);
+            foreach (ProcessControlBlock pcb in currentPCBsWait)
+            {
+                pcb.waitCycles--;
+            }
+            foreach (ProcessControlBlock pcb in currentPCBsIO)
+            {
+                pcb.waitCycles--;
+            }
+        }
 
     }
 }

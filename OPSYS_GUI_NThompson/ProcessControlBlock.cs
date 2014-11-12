@@ -36,6 +36,11 @@ namespace OPSYS_GUI_NThompson
             get;
             set;
         }
+        public int waitCycles
+        {
+            get;
+            set;
+        }
         //overloadded Constructor
         public ProcessControlBlock(string name, int length, int priority, int id)
         {

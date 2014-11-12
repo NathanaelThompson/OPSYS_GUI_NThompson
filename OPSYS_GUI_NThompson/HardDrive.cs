@@ -80,6 +80,7 @@ namespace OPSYS_GUI_NThompson
                         tempPCB.SetPCBJobPriority(int.Parse(sanitizedInput[i + 3]));
                         tempPCB.SetPCBID(i);
                         tempID = i;
+                        tempPCB.destination = "LTS";
                         pcbList.Add(tempPCB);
                         i += 3;
                     }
@@ -119,6 +120,13 @@ namespace OPSYS_GUI_NThompson
         public void ReturnJobToHD(ProcessControlBlock pcb)
         {
             jobsWaitingHD.Enqueue(pcb);
+        }
+        public void ReturnJobsToHD(List<ProcessControlBlock> aPCBList)
+        {
+            foreach (ProcessControlBlock pcb in aPCBList)
+            {
+                jobsWaitingHD.Enqueue(pcb);
+            }
         }
         public string InstructionSelector()
         {

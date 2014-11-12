@@ -33,6 +33,7 @@ namespace OPSYS_GUI_NThompson
         public void CompactRAM()
         {
             int address = 0;
+            
             foreach (Instruction inst in instructionsInRAM)
             {
                 if (inst.Equals(null))
@@ -48,7 +49,19 @@ namespace OPSYS_GUI_NThompson
                     address++;
                 }
             }
-            AddJobToRAM(StartForm.hdd.jobsWaitingHD.Dequeue());
+
+            //If there are jobs waiting on the hard drive, attempt to add them to RAM
+            Queue<ProcessControlBlock> hdWaitQ = StartForm.hdd.jobsWaitingHD;
+            if (hdWaitQ.Count <= 0)
+            {
+                return;
+            }
+            else
+            {
+                ProcessControlBlock waitingPCB = hdWaitQ.Dequeue();
+                AddJobToRAM(waitingPCB);
+            }
+            
         }
 
         //untested
@@ -69,6 +82,19 @@ namespace OPSYS_GUI_NThompson
             return totalGap;
         }
 
+        //Gets total available slots in RAM
+        public int GetTotalRAMSpace()
+        {
+            int totalGap = 0;
+            for (int i = 0; i < size; i++)
+            {
+                if (instructionsInRAM[i].Equals(null))
+                {
+                    totalGap++;
+                }
+            }
+            return totalGap;
+        }
         //untested
         public void MoveJobInRAM(ProcessControlBlock pcb, int baseAddress)
         {
@@ -93,21 +119,21 @@ namespace OPSYS_GUI_NThompson
         {
             List<Instruction> instructsToAdd = pcb.GetInstructions(pcb.GetPCBID());
             int address = 0;
-            foreach (Instruction instruction in instructsToAdd)
+            foreach (Instruction instruction in instructionsInRAM)
             {
                 if (instructionsInRAM[address].Equals(null))
                 {
                     int ramGap = GetRAMGap(address);
                     if (pcb.GetPCBJobLength() <= ramGap)
                     {
-                        instructionsInRAM.Add(instruction);
+                        StartForm.ram.AddJobToRAM(pcb);
                     }
                     else
                     {
                         StartForm.hdd.ReturnJobToHD(pcb);
                     }
                 }
-                
+                address++;
             }
         }
 

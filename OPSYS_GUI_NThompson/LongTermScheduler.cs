@@ -32,11 +32,13 @@ namespace OPSYS_GUI_NThompson
 
                 if ((lengthOfJob + totalLOI) < sizeOfRam)
                 {
-                    StartForm.ram.AddInstructionsToRAM(tempInstructions);
+                    StartForm.ram.AddJobToRAM(pcb);
                 }
                 else
                 {
-                    return;
+                    int lastIndex = unsortedPCB.IndexOf(pcb);
+                    List<ProcessControlBlock> ramFullPCBList = unsortedPCB.GetRange(lastIndex, (unsortedPCB.Count - lastIndex));
+                    StartForm.hdd.ReturnJobsToHD(ramFullPCBList);
                 }
 
                 totalLOI += lengthOfJob;
@@ -152,10 +154,8 @@ namespace OPSYS_GUI_NThompson
                 else 
                 {
                     int lastIndex = sortedPCBList.IndexOf(pcb);
-                    for (int i = lastIndex; i < sortedPCBList.Count; i++)
-                    {
-                        //StartForm.waitQueueSF.Enqueue(sortedPCBList[i]);
-                    }
+                    List<ProcessControlBlock> ramFullPCBList = sortedPCBList.GetRange(lastIndex, (sortedPCBList.Count - lastIndex));
+                    StartForm.hdd.ReturnJobsToHD(ramFullPCBList);
                     sortedPCBList.RemoveRange(lastIndex, (sortedPCBList.Count - lastIndex));
                     return sortedPCBList;
                 }
@@ -266,7 +266,7 @@ namespace OPSYS_GUI_NThompson
                     }
                 }
             }
-            StartForm.sortedPCBListAll = sortedPCBList;
+            StartForm.sortedPCBsInRAM = sortedPCBList;
             //Gets the instructions from a PCB object's ID
             //Checks to see if they fit, then adds them
             int sizeOfRAM = StartForm.ram.GetRAMSize();
@@ -285,12 +285,8 @@ namespace OPSYS_GUI_NThompson
                 else//Otherwise, return the job to the hard drive, and remove it from the sortedPCBList
                 {
                     int lastIndex = sortedPCBList.IndexOf(pcb);
-                    
-                    for (int i = lastIndex; i < sortedPCBList.Count; i++)
-                    {
-                        StartForm.hdd.ReturnJobToHD(sortedPCBList[i]);
-                    }
-                    
+                    List<ProcessControlBlock> ramFullPCBList = sortedPCBList.GetRange(lastIndex, (sortedPCBList.Count - lastIndex));
+                    StartForm.hdd.ReturnJobsToHD(ramFullPCBList);
                     sortedPCBList.RemoveRange(lastIndex, (sortedPCBList.Count - lastIndex));
                     return sortedPCBList;
                 }
