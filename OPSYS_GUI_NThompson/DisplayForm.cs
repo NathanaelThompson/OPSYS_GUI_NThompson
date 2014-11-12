@@ -27,25 +27,30 @@ namespace OPSYS_GUI_NThompson
         {
             DataGridView grid = new DataGridView();
             instructionGrid.ColumnCount = 6;
-            instructionGrid.Columns[0].Name = "Line";
-            instructionGrid.Columns[1].Name = "Type";
-            instructionGrid.Columns[2].Name = "Register 1";
-            instructionGrid.Columns[3].Name = "Register 2";
-            instructionGrid.Columns[4].Name = "Value";
-            instructionGrid.Columns[5].Name = "Process ID";
+            instructionGrid.Columns[0].Name = "Job Name";
+            instructionGrid.Columns[1].Name = "Job Length";
+            instructionGrid.Columns[2].Name = "Job Priority";
+            instructionGrid.Columns[3].Name = "Register 1";
+            instructionGrid.Columns[4].Name = "Register 2";
+            instructionGrid.Columns[5].Name = "Register 3";
+            instructionGrid.Columns[6].Name = "Register 4";
+            instructionGrid.Columns[7].Name = "Accumulator";
+            instructionGrid.Columns[8].Name = "Total CPU Cycles";
 
-            int instructionCount = StartForm.ram.InstructionsInRAMCount();
-            List<Instruction> instructionsInRam = StartForm.ram.GetInstructionsInRAM();
-            for (int i = 0; i < instructionCount; i++)
+            List<ProcessControlBlock> finishedJobs = StartForm.finishedJobs;
+            for (int i = 0; i < finishedJobs.Count-1; i++)
             {
                 string[] row = new string[] 
                 {   
-                    instructionsInRam[i].GetInstructionLine().ToString(),
-                    instructionsInRam[i].GetInstructionType(),
-                    instructionsInRam[i].GetRegister1(),
-                    instructionsInRam[i].GetRegister2(),
-                    instructionsInRam[i].GetInstructionValue().ToString(),
-                    instructionsInRam[i].GetJobID().ToString() 
+                    finishedJobs[i].GetPCBJobName(),
+                    finishedJobs[i].GetPCBJobLength().ToString(),
+                    finishedJobs[i].GetPCBJobPriority().ToString(),
+                    finishedJobs[i].programState.register1.ToString(),
+                    finishedJobs[i].programState.register2.ToString(),
+                    finishedJobs[i].programState.register3.ToString(),
+                    finishedJobs[i].programState.register4.ToString(),
+                    finishedJobs[i].programState.accumulator.ToString(),
+                    finishedJobs[i].totalCycles.ToString()
                 };
                 
                 grid = instructionGrid;
@@ -60,8 +65,6 @@ namespace OPSYS_GUI_NThompson
 
         private void closeButton_Click(object sender, EventArgs e)
         {
-            instructionGrid.Rows.Clear();
-            instructionGrid.Refresh();
             this.Close();
         }
     }

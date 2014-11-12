@@ -9,15 +9,10 @@ namespace OPSYS_GUI_NThompson
 {
     public class CPUObject
     {
-        private static int register1, register2, register3, register4, accumulator, programCounter;
-        //static ProcessControlBlock currentPCB = StartForm.readyQueueSF.Dequeue();
-        //List<Instruction> currentInst = currentPCB.GetInstructions(currentPCB.GetPCBID());
+        private int register1, register2, register3, register4, accumulator, programCounter;
+        
         bool endOfInstructionsFlag = false;
-        public static int cpuCycles
-        {
-            get;
-            set;
-        }
+        
         public int register1Value
         {
             get
@@ -26,7 +21,7 @@ namespace OPSYS_GUI_NThompson
             }
             set
             {
-                register1 = register1Value;
+                register1 = value;
             }
         }
         public int register2Value
@@ -37,7 +32,7 @@ namespace OPSYS_GUI_NThompson
             }
             set
             {
-                register2 = register2Value;
+                register2 = value;
             }
         }
         public int register3Value
@@ -48,7 +43,7 @@ namespace OPSYS_GUI_NThompson
             }
             set
             {
-                register3 = register3Value;
+                register3 = value;
             }
         }
         public int register4Value
@@ -59,7 +54,7 @@ namespace OPSYS_GUI_NThompson
             }
             set
             {
-                register4 = register4Value;
+                register4 = value;
             }
         }
         public int accumulatorValue
@@ -70,10 +65,15 @@ namespace OPSYS_GUI_NThompson
             }
             set
             {
-                accumulator = accumulatorValue;
+                accumulator = value;
             }
         }
         public bool isAvailable
+        {
+            get;
+            set;
+        }
+        public bool contextSwitchFlag
         {
             get;
             set;
@@ -102,11 +102,12 @@ namespace OPSYS_GUI_NThompson
         {
             
             ProcessControlBlock currentPCB = StartForm.dispatch.GetJobFromReadyQ();
-            //Dat one line fetch
+            //Dat one line fetch, if I had to guess, I would say this is likely to change
             List<Instruction> currentInstructions = currentPCB.GetInstructions(currentPCB.GetPCBID());
-            ProgramState currentProgramState = currentPCB.programState;
-            bool restartFlag = false;
-
+            ProgramState currentProgramState = new ProgramState();
+            currentProgramState = currentPCB.programState;
+            contextSwitchFlag = false;
+            
             int instIndex = currentProgramState.lineOfExecution;
             if (instIndex != 0)
             {
@@ -116,55 +117,77 @@ namespace OPSYS_GUI_NThompson
                 register4Value = currentProgramState.register4;
                 accumulatorValue = currentProgramState.accumulator;
             }
-
-            while (!(restartFlag))
+            else if(instIndex == currentInstructions.Count)
+            {
+                StartForm.dispatch.AddToTermQ(currentPCB,0);
+                currentPCB = StartForm.dispatch.GetJobFromReadyQ();
+            }
+            while (!(contextSwitchFlag))
             {
                 int inst_currentLine = instIndex;
                 string instType = currentInstructions[instIndex].GetInstructionType();
                 int instructionValue = currentInstructions[instIndex].GetInstructionValue();
                 int instID = currentInstructions[instIndex].GetJobID();
                 
-                //temporary lookup table
+                //psuedo lookup table
                 switch (instType)
                 {
                     case "add"://add two registers, done
                         MathDecisionFunction(currentInstructions[instIndex]);
                         instIndex++;
+                        currentPCB.totalCycles++;
+                        StartForm.dispatch.DecrementQueueTimes();
                         break;
                     case "sub"://subtract two registers, done
                         MathDecisionFunction(currentInstructions[instIndex]);
                         instIndex++;
+                        currentPCB.totalCycles++;
+                        StartForm.dispatch.DecrementQueueTimes();
                         break;
                     case "mul"://multiply, done
                         MathDecisionFunction(currentInstructions[instIndex]);
                         instIndex++;
+                        currentPCB.totalCycles++;
+                        StartForm.dispatch.DecrementQueueTimes();
                         break;
                     case "div"://divide, done
                         MathDecisionFunction(currentInstructions[instIndex]);
                         instIndex++;
+                        currentPCB.totalCycles++;
+                        StartForm.dispatch.DecrementQueueTimes();
                         break;
                     case "_rd"://read, send job to io queue for X cycles
                         //this needs to be reworked to include cycle values
                         StartForm.dispatch.AddToIOQ(currentPCB, instructionValue);
-                        restartFlag = true;
+                        contextSwitchFlag = true;
+                        currentPCB.totalCycles++;
+                        StartForm.dispatch.DecrementQueueTimes();
                         break;
                     case "_wr"://write, send job to io queue for X cycles
                         //this needs to be reworked
                         StartForm.dispatch.AddToIOQ(currentPCB, instructionValue);
-                        restartFlag = true;
+                        contextSwitchFlag = true;
+                        currentPCB.totalCycles++;
+                        StartForm.dispatch.DecrementQueueTimes();
                         break;
                     case "_wt"://wait, send job to wait queue
                         //this needs to be reworked
                         StartForm.dispatch.AddToWaitQ(currentPCB, instructionValue);
-                        restartFlag = true;
+                        contextSwitchFlag = true;
+                        currentPCB.totalCycles++;
+                        StartForm.dispatch.DecrementQueueTimes();
                         break;
                     case "sto"://store value in acc, done
                         accumulatorValue = instructionValue;
                         instIndex++;
+                        currentPCB.totalCycles++;
+                        StartForm.dispatch.DecrementQueueTimes();
                         break;
                     case "rcl"://take acc value and assign to register, done
                         Recall(currentInstructions[instIndex]);
                         instIndex++;
+                        currentPCB.totalCycles++;
+                        StartForm.dispatch.DecrementQueueTimes();
                         break;
                     case "nul"://reset registers to default value, done
                         register1 = 1;
@@ -173,6 +196,8 @@ namespace OPSYS_GUI_NThompson
                         register4 = 7;
                         accumulator = 9;
                         instIndex++;
+                        currentPCB.totalCycles++;
+                        StartForm.dispatch.DecrementQueueTimes();
                         break;
                     case "stp"://halt execution, save state, return job to RQ
                         instIndex = 0;
@@ -185,9 +210,10 @@ namespace OPSYS_GUI_NThompson
                         currentProgramState.register3 = register3Value;
                         currentProgramState.register4 = register4Value;
                         currentPCB.programState = currentProgramState;
-
-                        //this needs to be reworked
-                        //StartForm.readyQueueSF.Enqueue(pcb);
+                        
+                        currentPCB.totalCycles++;
+                        StartForm.dispatch.DecrementQueueTimes();
+                        
                         break;
                     case "err"://error condition, save state to PCB and terminate program
                         instIndex = 0;    
@@ -200,9 +226,10 @@ namespace OPSYS_GUI_NThompson
                         currentProgramState.register3 = register3Value;
                         currentProgramState.register4 = register4Value;
                         currentPCB.programState = currentProgramState;
-
-                        //this needs to be reworked
-                        //StartForm.dispatch.termQueueD.Enqueue(pcb);
+                        
+                        currentPCB.totalCycles++;
+                        StartForm.dispatch.DecrementQueueTimes();
+                        
                         break;
                     default: //if SOMEHOW this case is called, it needs to be handled immediately
                         MessageBox.Show("BLUE SCREEN OF DEATH."+"\nProcess ID: " + 
@@ -214,7 +241,6 @@ namespace OPSYS_GUI_NThompson
                         Application.Exit();
                         break;
                 }
-                cpuCycles++;
             }
         }
 

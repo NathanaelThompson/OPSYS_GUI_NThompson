@@ -27,7 +27,7 @@ namespace OPSYS_GUI_NThompson
 
         public void DispatchInitialQueue(ProcessControlBlock pcb)
         {
-            if (!(pcb.destination.Equals(null)))
+            if (!(pcb.destination == ""))
             {
                 if (pcb.destination == "IO")
                 {
@@ -114,6 +114,7 @@ namespace OPSYS_GUI_NThompson
             else
             {
                 termQ.Enqueue(pcb);
+                StartForm.finishedJobs.Add(pcb);
                 termQ.Dequeue();
             }
         }

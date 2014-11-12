@@ -103,6 +103,8 @@
  *          Lots of progress today so far.  Jobs can be moved in both directions all the way from the hard drive to RAM. However,
  *          there is a pretty big, pretty easy to fix bug in the FCFS algorithm.
  *          
+ *          The MathDecisionFunction works.  As far as I can tell, the Subtract function works.
+ *          
  */
 using System;
 using System.Collections.Generic;
@@ -126,6 +128,7 @@ namespace OPSYS_GUI_NThompson
         public static RAMObject ram;
         public static List<Instruction> instructions;
         public static List<ProcessControlBlock> pcbList;
+        public static List<ProcessControlBlock> finishedJobs = new List<ProcessControlBlock>();
         public static HardDrive hdd;
         public static Dispatcher dispatch = new Dispatcher();
         public static CPUObject cpu;
@@ -242,17 +245,13 @@ namespace OPSYS_GUI_NThompson
             //could be rewritten as a foreach loop
             foreach (ProcessControlBlock pcb in sortedPCBsInRAM)
             {
+                //Squishes jobs in RAM together
                 ram.CompactRAM();
-
-                //I don't the logic here, should change.
-                //List<Instruction> nextJobInRAM = ram.GetJobInRAM(sortedPCBListAll[bigLoopCycles]);
-                //ProcessControlBlock pcb = nextJobInRAM[0].GetPCB(nextJobInRAM[0].GetJobID());
-                ///////////////////////////////////////////////////////////////////////////
-
                 
+
                 dispatch.DispatchInitialQueue(pcb);
-                bigLoopCycles++;
                 cpu.FetchDecodeAndExecute();
+                bigLoopCycles++;
 
                 //check the hard drive for jobs, then send to the LTS
                 pcbQueueHD = hdd.jobsWaitingHD;
@@ -260,7 +259,10 @@ namespace OPSYS_GUI_NThompson
 
                 if (pcbListToLTS.Count <= 0)
                 {
-                    break;
+                    //Launch display form
+                    DisplayForm dspForm = new DisplayForm();
+                    dspForm.Show();
+                    Application.Exit();
                 }
                 else
                 {

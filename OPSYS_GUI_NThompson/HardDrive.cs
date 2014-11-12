@@ -80,7 +80,6 @@ namespace OPSYS_GUI_NThompson
                         tempPCB.SetPCBJobPriority(int.Parse(sanitizedInput[i + 3]));
                         tempPCB.SetPCBID(i);
                         tempID = i;
-                        tempPCB.destination = "LTS";
                         pcbList.Add(tempPCB);
                         i += 3;
                     }

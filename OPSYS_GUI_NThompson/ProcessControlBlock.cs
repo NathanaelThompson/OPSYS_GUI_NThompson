@@ -9,17 +9,32 @@ namespace OPSYS_GUI_NThompson
     public class ProcessControlBlock
     {
         //PCB members
+        private string destinationValue;
         string jobName;
         int jobLength, jobPriority, pcbID;
-        public ProgramState programState
-        {
-            get;
-            set;
-        }
+        private ProgramState progState;
         public string destination
         {
-            get;
-            set;
+            get
+            {
+                return destinationValue;
+            }
+            set 
+            { 
+                destinationValue = value; 
+            }
+
+        }
+        public ProgramState programState
+        {
+            get
+            {
+                return progState;
+            }
+            set
+            {
+                progState = value;
+            }
         }
         public string location
         {
@@ -41,6 +56,12 @@ namespace OPSYS_GUI_NThompson
             get;
             set;
         }
+        public int totalCycles
+        {
+            get;
+            set;
+        }
+
         //overloadded Constructor
         public ProcessControlBlock(string name, int length, int priority, int id)
         {
@@ -48,12 +69,17 @@ namespace OPSYS_GUI_NThompson
             jobLength = length;
             jobPriority = priority;
             pcbID = id;
+            ProgramState pgs = new ProgramState();
+            progState = pgs;
+            destinationValue = "";
         }
 
         //default constructor
         public ProcessControlBlock()
         {
-
+            ProgramState pgs = new ProgramState();
+            progState = pgs;
+            destinationValue = "";
         }
 
         #region Get and Set Methods

@@ -11,7 +11,13 @@ namespace OPSYS_GUI_NThompson
         
         public ProgramState()
         {
-
+            lineOfExecution = 0;
+            instructionType = "";
+            register1 = 1;
+            register2 = 3;
+            register3 = 5;
+            register4 = 7;
+            accumulator = 9;
         }
         public int lineOfExecution
         {
