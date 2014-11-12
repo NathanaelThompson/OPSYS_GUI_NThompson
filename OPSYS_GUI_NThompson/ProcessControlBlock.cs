@@ -72,7 +72,6 @@ namespace OPSYS_GUI_NThompson
         {
             List<Instruction> tempInstructions = new List<Instruction>();
             
-
             //compares the instructions' ID to the 
             //PCB's id passed as the parameter to this function
             foreach (Instruction inst in StartForm.instructions)

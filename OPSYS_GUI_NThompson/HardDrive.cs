@@ -16,6 +16,7 @@ namespace OPSYS_GUI_NThompson
         //idea of what's going on
         public static List<Instruction> instructionList = new List<Instruction>(5000);
         public static List<ProcessControlBlock> pcbList = new List<ProcessControlBlock>(500);
+        public Queue<ProcessControlBlock> jobsWaitingHD = new Queue<ProcessControlBlock>();
         string rawData;
         string path;
 
@@ -114,6 +115,10 @@ namespace OPSYS_GUI_NThompson
         public List<ProcessControlBlock> GetPCBList()
         {
             return pcbList;
+        }
+        public void ReturnJobToHD(ProcessControlBlock pcb)
+        {
+            jobsWaitingHD.Enqueue(pcb);
         }
         public string InstructionSelector()
         {

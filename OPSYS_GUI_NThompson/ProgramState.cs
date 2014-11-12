@@ -23,12 +23,27 @@ namespace OPSYS_GUI_NThompson
             get;
             set;
         }
-        public string register1
+        public int register1
         {
             get;
             set;
         }
-        public string register2
+        public int register2
+        {
+            get;
+            set;
+        }
+        public int register3
+        {
+            get;
+            set;
+        }
+        public int register4
+        {
+            get;
+            set;
+        }
+        public int accumulator
         {
             get;
             set;

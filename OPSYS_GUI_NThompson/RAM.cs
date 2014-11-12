@@ -29,24 +29,47 @@ namespace OPSYS_GUI_NThompson
             
         }
 
-        //UNFINISHED, DO NOT CALL
+        //untested
         public void CompactRAM()
         {
-            int[] emptyAddressArr = new int[GetRAMSize()];
             int address = 0;
             foreach (Instruction inst in instructionsInRAM)
             {
                 if (inst.Equals(null))
                 {
-                    MoveJobInRAM(inst.GetPCB(inst.GetJobID()), address);
-                    address++;
+                    ProcessControlBlock tempPCB = new ProcessControlBlock();
+                    tempPCB = inst.GetPCB(inst.GetJobID());
+                    
+                    MoveJobInRAM(tempPCB, address);
+                    address += tempPCB.GetPCBJobLength();
                 }
                 else
                 {
                     address++;
                 }
             }
+            AddJobToRAM(StartForm.hdd.jobsWaitingHD.Dequeue());
         }
+
+        //untested
+        public int GetRAMGap(int startAddress)
+        {
+            int totalGap = 0;
+            for (int i = startAddress; i < size; i++)
+            {
+                if (instructionsInRAM[i].Equals(null))
+                {
+                    totalGap++;
+                }
+                else
+                {
+                    return totalGap;
+                }
+            }
+            return totalGap;
+        }
+
+        //untested
         public void MoveJobInRAM(ProcessControlBlock pcb, int baseAddress)
         {
             List<Instruction> instructionsToMove = pcb.GetInstructions(pcb.GetPCBID());
@@ -55,6 +78,7 @@ namespace OPSYS_GUI_NThompson
                 instructionsInRAM.Insert(baseAddress, inst);
             }
         }
+
         //adds instructions to RAM
         public void AddInstructionsToRAM(List<Instruction> instructs)
         {
@@ -64,19 +88,40 @@ namespace OPSYS_GUI_NThompson
             }
         }
 
-        //Add single set of instructions to RAM
+        //Add single set of instructions to RAM, untested
         public void AddJobToRAM(ProcessControlBlock pcb)
         {
             List<Instruction> instructsToAdd = pcb.GetInstructions(pcb.GetPCBID());
+            int address = 0;
             foreach (Instruction instruction in instructsToAdd)
             {
-                instructionsInRAM.Add(instruction);
+                if (instructionsInRAM[address].Equals(null))
+                {
+                    int ramGap = GetRAMGap(address);
+                    if (pcb.GetPCBJobLength() <= ramGap)
+                    {
+                        instructionsInRAM.Add(instruction);
+                    }
+                    else
+                    {
+                        StartForm.hdd.ReturnJobToHD(pcb);
+                    }
+                }
+                
             }
         }
+
         //Gets instructions in RAM
         public List<Instruction> GetInstructionsInRAM()
         {
             return instructionsInRAM;
+        }
+
+        //Gets one job's instructions in RAM
+        public List<Instruction> GetJobInRAM(ProcessControlBlock pcb)
+        {
+            List<Instruction> oneJobsInstructions = pcb.GetInstructions(pcb.GetPCBID());
+            return oneJobsInstructions;
         }
 
         //Gets the size of RAM
@@ -91,6 +136,7 @@ namespace OPSYS_GUI_NThompson
             return instructionsInRAM.Count;
         }
 
+        //untested
         public void RemoveJobFromRAM(ProcessControlBlock pcb)
         {
             List<Instruction> instToRemove = pcb.GetInstructions(pcb.GetPCBID());
@@ -99,9 +145,11 @@ namespace OPSYS_GUI_NThompson
                 instructionsInRAM.Remove(inst);
             }
         }
-        public void ClearRAM(List<Instruction> instructions)
+
+        //untested
+        public void ClearRAM()
         {
-            instructions.Clear();
+            instructionsInRAM.Clear();
         }
     }
 }

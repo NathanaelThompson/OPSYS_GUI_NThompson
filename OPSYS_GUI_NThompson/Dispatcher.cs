@@ -25,7 +25,30 @@ namespace OPSYS_GUI_NThompson
             termQ = new Queue<ProcessControlBlock>(200);
         }
 
-        //The following functions CANNOT STAY LIKE THEY ARE, THEY MUST BE CHANGED
+        public void Dispatch(ProcessControlBlock pcb)
+        {
+            if (!(pcb.destination.Equals(null)))
+            {
+                if (pcb.destination == "IO")
+                {
+                    AddToIOQ(pcb);
+                }
+                else if (pcb.destination == "Wait")
+                {
+                    AddToWaitQ(pcb);
+                }
+                else if (pcb.destination == "Ready")
+                {
+                    AddToReadyQ(pcb);
+                }
+                else
+                {
+                    AddToWaitQ(pcb);
+                }
+            }
+            StartForm.cpu.FetchDecodeAndExecute(readyQ.Dequeue());
+        }
+        
         public void AddToReadyQ(ProcessControlBlock pcb)
         {
             if (readyQ.Count >= 10)
@@ -43,7 +66,8 @@ namespace OPSYS_GUI_NThompson
         {
             if (waitQ.Count >= 10)
             {
-                return;
+                pcb.destination = "Wait";
+                StartForm.ram.AddJobToRAM(pcb);
             }
             else
             {
@@ -55,7 +79,8 @@ namespace OPSYS_GUI_NThompson
         {
             if (ioQ.Count >= 10)
             {
-                return;
+                pcb.destination = "IO";
+                StartForm.ram.AddJobToRAM(pcb);
             }
             else
             {
@@ -65,6 +90,8 @@ namespace OPSYS_GUI_NThompson
 
         public void AddToTermQ(ProcessControlBlock pcb)
         {
+            //Seriously, this should never EVER be true
+            //I can't even imagine a scenario where the terminate queue reaches 
             if (termQ.Count >= 200)
             {
                 MessageBox.Show("BLUE SCREEN OF DEATH." + "\nProcess ID: " +
@@ -76,6 +103,7 @@ namespace OPSYS_GUI_NThompson
             else
             {
                 termQ.Enqueue(pcb);
+                termQ.Dequeue();
             }
         }
 

@@ -22,7 +22,7 @@
  * 
  * Phase 2:  Jobs                                                                                  Instructions
  *         -------------------------------------------------------------------------------------------------------------------------------------------------
- *         | Moves jobs from LTS to Ready/Wait queues (COMPLETE)                                 | Moves instructions from RAM to CPU                      |
+ *         | Moves jobs from LTS to Ready/Wait queues (COMPLETE)                                 | Moves instructions from RAM to CPU (IN PROGRESS)        |
  *         | Create Dispatcher class (IN PROGRESS)                                               | Create CPU class (IN PROGRESS)                          |
  *         | Display Job Information to user (process ID, values in register upon termination)   | Process information in the CPU (fetch, decode, execute) |
  *         |                                                                                     |   -Move data to and from registers and accumulator      |
@@ -83,14 +83,17 @@
  *          
  *          As of right now, 9 of the 12 instruction types are complete and work on the other 3 has already begun.
  *          
- * 11/11/14:I have cleared my schedule as much as I can.  This is now a full 6 day code marathon.  I'm only taking breaks to eat and
- *          go to class.  Today's task is compacting RAM.
+ * 11/11/14:I have cleared my schedule as much as I can.  This is now a full 6 day code marathon.  I'm only taking breaks to eat, to sleep,
+ *          to go to class, and to go to my brother's wedding.  Today's task is compacting RAM.
  *          
  *          UGH. Found a soul crushing error in the Math portion of my CPU. Gonna be a long day...
  *          Ok, problem fixed.  Everything that depends on the Queues needs to be rewritten.
  *          
  *          PCBs/RAM need/s an addressing system.  There has to be so much swapping and compacting that I really need to try to simplify
  *          the process.
+ *          
+ *          Functions for re-arranging RAM are in place.  I haven't tested anything in over 700 lines of code.  I'm just rushing
+ *          to get the idea on paper (so to speak).
  */
 using System;
 using System.Collections.Generic;
@@ -116,7 +119,10 @@ namespace OPSYS_GUI_NThompson
         public static List<ProcessControlBlock> pcbList;
         public static HardDrive hdd;
         public static Dispatcher dispatch;
-        public CPU cpu;
+        public static CPUObject cpu;
+
+        //For testing purposes only
+        public static List<ProcessControlBlock> sortedPCBListAll;
         
         #endregion
         public StartForm()
@@ -183,26 +189,23 @@ namespace OPSYS_GUI_NThompson
             //New long term scheduler
             LongTermScheduler lts = new LongTermScheduler();
 
-            List<ProcessControlBlock> sortedPCBList;
+            
             //Selecting and applying the scheduling algorithm
             if (scheduleCB.SelectedItem == null || scheduleCB.SelectedItem.ToString() == "First Come First Serve")
             {   //First Come First Serve
                 scheduleAst.Visible = false;
                 lts.FirstComeFirstServe(pcbList);
-                sortedPCBList = pcbList;
+                sortedPCBListAll = pcbList;
             }
             else if (scheduleCB.SelectedItem.ToString() == "Shortest Job First")
             {   //Shortest Job First
                 scheduleAst.Visible = false;
-                sortedPCBList = lts.ShortestJobFirst(pcbList);
-                
+                sortedPCBListAll = lts.ShortestJobFirst(pcbList);
             }
             else if (scheduleCB.SelectedItem.ToString() == "Priority")
             {   //Priority
                 scheduleAst.Visible = false;
-
-                sortedPCBList = lts.PrioritySort(pcbList);
-
+                sortedPCBListAll = lts.PrioritySort(pcbList);
             }
             else
             {
@@ -216,16 +219,20 @@ namespace OPSYS_GUI_NThompson
             BigLoop();
 
         }//end "go" button
-        public static int bigLoopCycles
-        {
-            get;
-            set;
-        }
+
+        public int bigLoopCycles = 0;
         public void BigLoop()
         {
-            dispatch = new Dispatcher();
-            cpu = new CPU();
-            bigLoopCycles++;
+            while (true)
+            {
+                ram.CompactRAM();
+                List<Instruction> nextJobInRAM = ram.GetJobInRAM(sortedPCBListAll[bigLoopCycles]);
+                ProcessControlBlock pcb = nextJobInRAM[0].GetPCB(nextJobInRAM[0].GetJobID());
+                dispatch = new Dispatcher();
+                cpu = new CPUObject();
+                dispatch.Dispatch(pcb);
+                bigLoopCycles++;
+            }
         }
         private void helpButton_Click(object sender, EventArgs e)
         {

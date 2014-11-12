@@ -240,6 +240,7 @@ namespace OPSYS_GUI_NThompson
 
             //Attempt to join sorted lengths with their IDs
             List<ProcessControlBlock> sortedPCBList = new List<ProcessControlBlock>(unsortedPCB.Count);
+            
             int listIndex = 0;
             bool filledFlag = false;
             while (!filledFlag)
@@ -265,7 +266,7 @@ namespace OPSYS_GUI_NThompson
                     }
                 }
             }
-
+            StartForm.sortedPCBListAll = sortedPCBList;
             //Gets the instructions from a PCB object's ID
             //Checks to see if they fit, then adds them
             int sizeOfRAM = StartForm.ram.GetRAMSize();
@@ -276,19 +277,20 @@ namespace OPSYS_GUI_NThompson
                 int pcbID = pcb.GetPCBID();
                 List<Instruction> tempInstructions = pcb.GetInstructions(pcbID);
 
+                //if it fits, throw it in RAM
                 if ((lengthOfJob + totalLOI) < sizeOfRAM)
                 {
                     StartForm.ram.AddInstructionsToRAM(tempInstructions);
                 }
-                else
+                else//Otherwise, return the job to the hard drive, and remove it from the sortedPCBList
                 {
                     int lastIndex = sortedPCBList.IndexOf(pcb);
                     
                     for (int i = lastIndex; i < sortedPCBList.Count; i++)
                     {
-                        //StartForm.waitQueueSF.Enqueue(sortedPCBList[i]);
+                        StartForm.hdd.ReturnJobToHD(sortedPCBList[i]);
                     }
-
+                    
                     sortedPCBList.RemoveRange(lastIndex, (sortedPCBList.Count - lastIndex));
                     return sortedPCBList;
                 }

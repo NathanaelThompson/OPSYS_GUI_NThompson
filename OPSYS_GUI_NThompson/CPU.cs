@@ -7,7 +7,7 @@ using System.Windows.Forms;
 
 namespace OPSYS_GUI_NThompson
 {
-    public class CPU
+    public class CPUObject
     {
         private static int register1, register2, register3, register4, accumulator, programCounter;
         //static ProcessControlBlock currentPCB = StartForm.readyQueueSF.Dequeue();
@@ -74,7 +74,7 @@ namespace OPSYS_GUI_NThompson
             }
         }
         
-        public CPU()
+        public CPUObject()
         {
             register1 = 1;
             register2 = 3;
@@ -83,7 +83,7 @@ namespace OPSYS_GUI_NThompson
             accumulator = 9;
             programCounter = 0;
         }
-        public CPU(int reg1, int reg2, int reg3, int reg4, int acc, int pc)
+        public CPUObject(int reg1, int reg2, int reg3, int reg4, int acc, int pc)
         {
             register1 = reg1;
             register2 = reg2;
@@ -100,13 +100,16 @@ namespace OPSYS_GUI_NThompson
             List<Instruction> currentInstructions = pcb.GetInstructions(pcb.GetPCBID());
 
             ProgramState currentProgramState = pcb.programState;
+            register1Value = currentProgramState.register1;
+            register2Value = currentProgramState.register2;
+            register3Value = currentProgramState.register3;
+            register4Value = currentProgramState.register4;
+            accumulatorValue = currentProgramState.accumulator;
             bool restartFlag = false;
-            int instIndex = 0;
+            int instIndex = currentProgramState.lineOfExecution;
+
             while (!(restartFlag))
             {
-
-                string inst_register1 = currentInstructions[instIndex].GetRegister1();
-                string inst_register2 = currentInstructions[instIndex].GetRegister2();
                 int inst_currentLine = instIndex;
                 string instType = currentInstructions[instIndex].GetInstructionType();
                 int instructionValue = currentInstructions[instIndex].GetInstructionValue();
@@ -133,17 +136,17 @@ namespace OPSYS_GUI_NThompson
                         break;
                     case "_rd"://read, send job to io queue for X cycles
                         //this needs to be reworked to include cycle values
-                        //StartForm.dispatch.ioQueueD.Enqueue(pcb);
+                        StartForm.dispatch.AddToIOQ(pcb);
                         restartFlag = true;
                         break;
                     case "_wr"://write, send job to io queue for X cycles
                         //this needs to be reworked
-                        //StartForm.dispatch.ioQueueD.Enqueue(pcb);
+                        StartForm.dispatch.AddToIOQ(pcb);
                         restartFlag = true;
                         break;
                     case "_wt"://wait, send job to wait queue
                         //this needs to be reworked
-                        //StartForm.dispatch.waitQueueD.Enqueue(pcb);
+                        StartForm.dispatch.AddToWaitQ(pcb);
                         restartFlag = true;
                         break;
                     case "sto"://store value in acc, done
@@ -168,8 +171,10 @@ namespace OPSYS_GUI_NThompson
                         currentProgramState.instructionType = instType;
                         currentProgramState.instructionValue = instructionValue;
                         currentProgramState.jobID = instID;
-                        currentProgramState.register1 = inst_register1;
-                        currentProgramState.register2 = inst_register2;
+                        currentProgramState.register1 = register1Value;
+                        currentProgramState.register2 = register2Value;
+                        currentProgramState.register3 = register3Value;
+                        currentProgramState.register4 = register4Value;
                         pcb.programState = currentProgramState;
 
                         //this needs to be reworked
@@ -181,8 +186,10 @@ namespace OPSYS_GUI_NThompson
                         currentProgramState.instructionType = instType;
                         currentProgramState.instructionValue = instructionValue;
                         currentProgramState.jobID = instID;
-                        currentProgramState.register1 = inst_register1;
-                        currentProgramState.register2 = inst_register2;
+                        currentProgramState.register1 = register1Value;
+                        currentProgramState.register2 = register2Value;
+                        currentProgramState.register3 = register3Value;
+                        currentProgramState.register4 = register4Value;
                         pcb.programState = currentProgramState;
 
                         //this needs to be reworked
