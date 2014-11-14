@@ -10,7 +10,19 @@ namespace OPSYS_GUI_NThompson
     {
         //Instruction members
         string instructionType, register1, register2;
-        int instructionLine, instructionValue, jobID;
+        int instructionLine, instructionValue, jobID, address;
+
+        public int instructionAddress
+        {
+            get
+            {
+                return address;
+            }
+            set
+            {
+                address = value;
+            }
+        }
 
         public Instruction()
         {

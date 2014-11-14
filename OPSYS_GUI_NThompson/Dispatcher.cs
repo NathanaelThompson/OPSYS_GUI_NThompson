@@ -55,9 +55,13 @@ namespace OPSYS_GUI_NThompson
         
         public void AddToReadyQ(ProcessControlBlock pcb)
         {
+            if (pcb.waitCycles == -999)
+            {
+                pcb.waitCycles = 0;
+            }
             if (readyQ.Count >= 10)
             {
-                AddToWaitQ(pcb, 0);
+                AddToWaitQ(pcb, pcb.waitCycles);
             }
             else
             {
@@ -66,8 +70,12 @@ namespace OPSYS_GUI_NThompson
             
         }
 
-        public void AddToWaitQ(ProcessControlBlock pcb, int waitCycles)
+        public void AddToWaitQ(ProcessControlBlock pcb, int wtCycles)
         {
+            if (pcb.waitCycles == -999)
+            {
+                pcb.waitCycles = wtCycles;
+            }
             if (waitQ.Count >= 10)
             {
                 pcb.destination = "Wait";
@@ -75,7 +83,7 @@ namespace OPSYS_GUI_NThompson
             }
             else
             {
-                if (waitCycles <= 0)
+                if (wtCycles <= 0)
                 {
                     AddToReadyQ(pcb);
                 }
@@ -86,8 +94,12 @@ namespace OPSYS_GUI_NThompson
             }
         }
 
-        public void AddToIOQ(ProcessControlBlock pcb, int waitCycles)
+        public void AddToIOQ(ProcessControlBlock pcb, int wtCycles)
         {
+            if (pcb.waitCycles == -999)
+            {
+                pcb.waitCycles = wtCycles;
+            }
             if (ioQ.Count >= 10)
             {
                 pcb.destination = "IO";
@@ -95,14 +107,21 @@ namespace OPSYS_GUI_NThompson
             }
             else
             {
-                ioQ.Enqueue(pcb);
+                if (pcb.waitCycles <= 0)
+                {
+                    AddToReadyQ(pcb);
+                }
+                else
+                {
+                    ioQ.Enqueue(pcb);
+                }
             }
         }
 
         public void AddToTermQ(ProcessControlBlock pcb, int waitCycles)
         {
             //Seriously, this should never EVER be true
-            //I can't even imagine a scenario where the terminate queue reaches 
+            //I can't even imagine a scenario where the terminate queue reaches 200
             if (termQ.Count >= 200)
             {
                 MessageBox.Show("BLUE SCREEN OF DEATH." + "\nProcess ID: " +

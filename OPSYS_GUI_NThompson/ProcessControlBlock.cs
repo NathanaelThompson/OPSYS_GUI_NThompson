@@ -13,6 +13,7 @@ namespace OPSYS_GUI_NThompson
         string jobName;
         int jobLength, jobPriority, pcbID;
         private ProgramState progState;
+        private int wtCycles = -999;
         public string destination
         {
             get
@@ -48,13 +49,25 @@ namespace OPSYS_GUI_NThompson
         }
         public int limitAddress
         {
-            get;
-            set;
+            get
+            {
+                return baseAddress + jobLength;
+            }
+            set
+            {
+                limitAddress = value;
+            }
         }
         public int waitCycles
         {
-            get;
-            set;
+            get
+            {
+                return wtCycles;
+            }
+            set
+            {
+                wtCycles = value;
+            }
         }
         public int totalCycles
         {

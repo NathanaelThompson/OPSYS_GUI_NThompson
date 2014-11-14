@@ -136,7 +136,10 @@ namespace OPSYS_GUI_NThompson
                 address++;
             }
         }
-
+        public Instruction GetInstructionInRAM(int address)
+        {
+            return instructionsInRAM[address];
+        }
         //Gets instructions in RAM
         public List<Instruction> GetInstructionsInRAM()
         {
@@ -149,7 +152,20 @@ namespace OPSYS_GUI_NThompson
             List<Instruction> oneJobsInstructions = pcb.GetInstructions(pcb.GetPCBID());
             return oneJobsInstructions;
         }
+        public ProcessControlBlock GetPCBTiedToRAM(int id)
+        {
+            ProcessControlBlock tempPCB = new ProcessControlBlock();
+            tempPCB.destination = "Fail";
+            foreach (Instruction inst in instructionsInRAM)
+            {
+                if (inst.GetJobID() == id)
+                {
+                    return inst.GetPCB(id);
 
+                }
+            }
+            return tempPCB;
+        }
         //Gets the size of RAM
         public int GetRAMSize()
         {

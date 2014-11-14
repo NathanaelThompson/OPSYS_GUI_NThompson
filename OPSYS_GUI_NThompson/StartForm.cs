@@ -104,6 +104,13 @@
  *          there is a pretty big, pretty easy to fix bug in the FCFS algorithm.
  *          
  *          The MathDecisionFunction works.  As far as I can tell, the Subtract function works.
+ *          NEED INTERRUPTS
+ *          
+ * 11/13/14: I wish I could explain to you, dear source code reader, exactly how much shit just keeps piling up.  Not with this project,
+ *           but with other courses and other real life things. I literally don't even have time to eat. Work, code, and sleep.
+ *           
+ * 11/14/14: So my laptop crapped out on me yesterday.  Got no work done on anything. In fact, this is only working because safe
+ *           mode is magical and allows visual studio to run for some reason.
  *          
  */
 using System;
@@ -231,7 +238,7 @@ namespace OPSYS_GUI_NThompson
                 return;
             }
             #endregion
-
+            cpu = new CPUObject();
             BigLoop();
 
         }//end "go" button
@@ -241,16 +248,14 @@ namespace OPSYS_GUI_NThompson
         List<ProcessControlBlock> pcbListToLTS;
         public void BigLoop()
         {
-            cpu = new CPUObject();
+            
             //could be rewritten as a foreach loop
-            foreach (ProcessControlBlock pcb in sortedPCBsInRAM)
-            {
+            while(true){
                 //Squishes jobs in RAM together
                 ram.CompactRAM();
                 
-
-                dispatch.DispatchInitialQueue(pcb);
-                cpu.FetchDecodeAndExecute();
+                dispatch.DispatchInitialQueue(sortedPCBsInRAM[bigLoopCycles]);
+                cpu.Fetch(dispatch.readyQ.Dequeue());
                 bigLoopCycles++;
 
                 //check the hard drive for jobs, then send to the LTS

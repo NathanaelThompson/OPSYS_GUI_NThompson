@@ -9,10 +9,21 @@ namespace OPSYS_GUI_NThompson
 {
     public class CPUObject
     {
-        private int register1, register2, register3, register4, accumulator, programCounter;
+        private int register1, register2, register3, register4, accumulator, pc;
         
         bool endOfInstructionsFlag = false;
-        
+
+        public int programCounter
+        {
+            get
+            {
+                return pc;
+            }
+            set
+            {
+                pc = value;
+            }
+        }
         public int register1Value
         {
             get
@@ -97,19 +108,23 @@ namespace OPSYS_GUI_NThompson
             programCounter = pc;
         }
 
-        
-        public void FetchDecodeAndExecute()
+        ProgramState pgst = new ProgramState();
+        ProgramState currentProgramState = new ProgramState();
+        public void Fetch(ProcessControlBlock pcb)
         {
-            
-            ProcessControlBlock currentPCB = StartForm.dispatch.GetJobFromReadyQ();
-            //Dat one line fetch, if I had to guess, I would say this is likely to change
-            List<Instruction> currentInstructions = currentPCB.GetInstructions(currentPCB.GetPCBID());
-            ProgramState currentProgramState = new ProgramState();
+            pgst = pcb.programState;
+            programCounter = pcb.baseAddress + pgst.lineOfExecution;
+            Instruction currentInstruction = StartForm.ram.GetInstructionInRAM(programCounter);
+            DecodeAndExecute(currentInstruction, pcb);
+        }
+        Dispatcher dspatcher = new Dispatcher();
+        
+        public void DecodeAndExecute(Instruction inst, ProcessControlBlock currentPCB)
+        {
+            dspatcher = StartForm.dispatch;
             currentProgramState = currentPCB.programState;
-            contextSwitchFlag = false;
-            
-            int instIndex = currentProgramState.lineOfExecution;
-            if (instIndex != 0)
+
+            if (inst.GetInstructionLine() != 0)
             {
                 register1Value = currentProgramState.register1;
                 register2Value = currentProgramState.register2;
@@ -117,77 +132,75 @@ namespace OPSYS_GUI_NThompson
                 register4Value = currentProgramState.register4;
                 accumulatorValue = currentProgramState.accumulator;
             }
-            else if(instIndex == currentInstructions.Count)
+            else if(inst.GetInstructionLine() == currentPCB.GetPCBJobLength())
             {
-                StartForm.dispatch.AddToTermQ(currentPCB,0);
-                currentPCB = StartForm.dispatch.GetJobFromReadyQ();
+                dspatcher.AddToTermQ(currentPCB,0);
             }
-            while (!(contextSwitchFlag))
-            {
-                int inst_currentLine = instIndex;
-                string instType = currentInstructions[instIndex].GetInstructionType();
-                int instructionValue = currentInstructions[instIndex].GetInstructionValue();
-                int instID = currentInstructions[instIndex].GetJobID();
-                
+            
+                int inst_currentLine = inst.GetInstructionLine();
+                string instType = inst.GetInstructionType();
+                int instructionValue = inst.GetInstructionValue();
+                int instID = inst.GetJobID();
+
                 //psuedo lookup table
                 switch (instType)
                 {
                     case "add"://add two registers, done
-                        MathDecisionFunction(currentInstructions[instIndex]);
-                        instIndex++;
+                        MathDecisionFunction(inst);
+                        currentProgramState.lineOfExecution++;
                         currentPCB.totalCycles++;
-                        StartForm.dispatch.DecrementQueueTimes();
+                        dspatcher.DecrementQueueTimes();
                         break;
                     case "sub"://subtract two registers, done
-                        MathDecisionFunction(currentInstructions[instIndex]);
-                        instIndex++;
+                        MathDecisionFunction(inst);
+                        currentProgramState.lineOfExecution++;
                         currentPCB.totalCycles++;
-                        StartForm.dispatch.DecrementQueueTimes();
+                        dspatcher.DecrementQueueTimes();
                         break;
                     case "mul"://multiply, done
-                        MathDecisionFunction(currentInstructions[instIndex]);
-                        instIndex++;
+                        MathDecisionFunction(inst);
+                        currentProgramState.lineOfExecution++;
                         currentPCB.totalCycles++;
-                        StartForm.dispatch.DecrementQueueTimes();
+                        dspatcher.DecrementQueueTimes();
                         break;
                     case "div"://divide, done
-                        MathDecisionFunction(currentInstructions[instIndex]);
-                        instIndex++;
+                        MathDecisionFunction(inst);
+                        currentProgramState.lineOfExecution++;
                         currentPCB.totalCycles++;
-                        StartForm.dispatch.DecrementQueueTimes();
+                        dspatcher.DecrementQueueTimes();
                         break;
                     case "_rd"://read, send job to io queue for X cycles
                         //this needs to be reworked to include cycle values
-                        StartForm.dispatch.AddToIOQ(currentPCB, instructionValue);
-                        contextSwitchFlag = true;
+                        dspatcher.AddToIOQ(currentPCB, instructionValue);
+                        currentProgramState.lineOfExecution++;
                         currentPCB.totalCycles++;
-                        StartForm.dispatch.DecrementQueueTimes();
+                        dspatcher.DecrementQueueTimes();
                         break;
                     case "_wr"://write, send job to io queue for X cycles
                         //this needs to be reworked
-                        StartForm.dispatch.AddToIOQ(currentPCB, instructionValue);
-                        contextSwitchFlag = true;
+                        dspatcher.AddToIOQ(currentPCB, instructionValue);
+                        currentProgramState.lineOfExecution++;
                         currentPCB.totalCycles++;
-                        StartForm.dispatch.DecrementQueueTimes();
+                        dspatcher.DecrementQueueTimes();
                         break;
                     case "_wt"://wait, send job to wait queue
                         //this needs to be reworked
-                        StartForm.dispatch.AddToWaitQ(currentPCB, instructionValue);
-                        contextSwitchFlag = true;
+                        dspatcher.AddToWaitQ(currentPCB, instructionValue);
+                        currentProgramState.lineOfExecution++;
                         currentPCB.totalCycles++;
-                        StartForm.dispatch.DecrementQueueTimes();
+                        dspatcher.DecrementQueueTimes();
                         break;
                     case "sto"://store value in acc, done
                         accumulatorValue = instructionValue;
-                        instIndex++;
+                        currentProgramState.lineOfExecution++;
                         currentPCB.totalCycles++;
-                        StartForm.dispatch.DecrementQueueTimes();
+                        dspatcher.DecrementQueueTimes();
                         break;
                     case "rcl"://take acc value and assign to register, done
-                        Recall(currentInstructions[instIndex]);
-                        instIndex++;
+                        Recall(inst);
+                        currentProgramState.lineOfExecution++;
                         currentPCB.totalCycles++;
-                        StartForm.dispatch.DecrementQueueTimes();
+                        dspatcher.DecrementQueueTimes();
                         break;
                     case "nul"://reset registers to default value, done
                         register1 = 1;
@@ -195,13 +208,12 @@ namespace OPSYS_GUI_NThompson
                         register3 = 5;
                         register4 = 7;
                         accumulator = 9;
-                        instIndex++;
+                        currentProgramState.lineOfExecution++;
                         currentPCB.totalCycles++;
-                        StartForm.dispatch.DecrementQueueTimes();
+                        dspatcher.DecrementQueueTimes();
                         break;
                     case "stp"://halt execution, save state, return job to RQ
-                        instIndex = 0;
-                        currentProgramState.lineOfExecution = inst_currentLine;
+                        currentProgramState.lineOfExecution = inst_currentLine + 1;
                         currentProgramState.instructionType = instType;
                         currentProgramState.instructionValue = instructionValue;
                         currentProgramState.jobID = instID;
@@ -210,13 +222,13 @@ namespace OPSYS_GUI_NThompson
                         currentProgramState.register3 = register3Value;
                         currentProgramState.register4 = register4Value;
                         currentPCB.programState = currentProgramState;
-                        
+
                         currentPCB.totalCycles++;
-                        StartForm.dispatch.DecrementQueueTimes();
-                        
+                        dspatcher.DecrementQueueTimes();
+
                         break;
                     case "err"://error condition, save state to PCB and terminate program
-                        instIndex = 0;    
+                        
                         currentProgramState.lineOfExecution = inst_currentLine;
                         currentProgramState.instructionType = instType;
                         currentProgramState.instructionValue = instructionValue;
@@ -226,21 +238,21 @@ namespace OPSYS_GUI_NThompson
                         currentProgramState.register3 = register3Value;
                         currentProgramState.register4 = register4Value;
                         currentPCB.programState = currentProgramState;
-                        
+
                         currentPCB.totalCycles++;
-                        StartForm.dispatch.DecrementQueueTimes();
-                        
+                        dspatcher.DecrementQueueTimes();
+
                         break;
                     default: //if SOMEHOW this case is called, it needs to be handled immediately
-                        MessageBox.Show("BLUE SCREEN OF DEATH."+"\nProcess ID: " + 
-                            instID + "\nInstruction Type: "+
+                        MessageBox.Show("BLUE SCREEN OF DEATH." + "\nProcess ID: " +
+                            instID + "\nInstruction Type: " +
                             instType + "\nLine of Execution: " +
-                            inst_currentLine+" Restart the OS to continue.",
+                            inst_currentLine + " Restart the OS to continue.",
                             "What? No, it's totally blue. Shut up, you broke my thing. You are a thing breaker. Jerk.",
                             MessageBoxButtons.OK, MessageBoxIcon.Stop);
                         Application.Exit();
                         break;
-                }
+                
             }
         }
 
@@ -300,16 +312,16 @@ namespace OPSYS_GUI_NThompson
                     switch (reg2)
                     {
                         case "A":
-                            accumulatorValue += register1Value + register1Value + instValue;
+                            accumulatorValue += register1Value + register1Value;
                             break;
                         case "B":
-                            accumulatorValue += register1Value + register2Value + instValue;
+                            accumulatorValue += register1Value + register2Value;
                             break;
                         case "C":
-                            accumulatorValue += register1Value + register3Value + instValue;
+                            accumulatorValue += register1Value + register3Value;
                             break;
                         case "D":
-                            accumulatorValue += register1Value + register4Value + instValue;
+                            accumulatorValue += register1Value + register4Value;
                             break;
                         default:
                             break;
@@ -319,16 +331,16 @@ namespace OPSYS_GUI_NThompson
                     switch (reg2)
                     {
                         case "A":
-                            accumulatorValue += register2Value + register1Value + instValue;
+                            accumulatorValue += register2Value + register1Value;
                             break;
                         case "B":
-                            accumulatorValue += register2Value + register2Value + instValue;
+                            accumulatorValue += register2Value + register2Value;
                             break;
                         case "C":
-                            accumulatorValue += register2Value + register3Value + instValue;
+                            accumulatorValue += register2Value + register3Value;
                             break;
                         case "D":
-                            accumulatorValue += register2Value + register4Value + instValue;
+                            accumulatorValue += register2Value + register4Value;
                             break;
                         default:
                             break;
@@ -338,16 +350,16 @@ namespace OPSYS_GUI_NThompson
                     switch (reg2)
                     {
                         case "A":
-                            accumulatorValue += register3Value + register1Value + instValue;
+                            accumulatorValue += register3Value + register1Value;
                             break;
                         case "B":
-                            accumulatorValue += register3Value + register2Value + instValue;
+                            accumulatorValue += register3Value + register2Value;
                             break;
                         case "C":
-                            accumulatorValue += register3Value + register3Value + instValue;
+                            accumulatorValue += register3Value + register3Value;
                             break;
                         case "D":
-                            accumulatorValue += register3Value + register4Value + instValue;
+                            accumulatorValue += register3Value + register4Value;
                             break;
                         default:
                             break;
@@ -357,16 +369,16 @@ namespace OPSYS_GUI_NThompson
                     switch (reg2)
                     {
                         case "A":
-                            accumulatorValue += register4Value + register1Value + instValue;
+                            accumulatorValue += register4Value + register1Value;
                             break;
                         case "B":
-                            accumulatorValue += register4Value + register2Value + instValue;
+                            accumulatorValue += register4Value + register2Value;
                             break;
                         case "C":
-                            accumulatorValue += register4Value + register3Value + instValue;
+                            accumulatorValue += register4Value + register3Value;
                             break;
                         case "D":
-                            accumulatorValue += register4Value + register4Value + instValue;
+                            accumulatorValue += register4Value + register4Value;
                             break;
                         default:
                             break;
@@ -385,16 +397,16 @@ namespace OPSYS_GUI_NThompson
                     switch (reg2)
                     {
                         case "A":
-                            accumulatorValue += (register1Value * register1Value) + instValue;
+                            accumulatorValue += (register1Value * register1Value);
                             break;
                         case "B":
-                            accumulatorValue += (register1Value * register2Value) + instValue;
+                            accumulatorValue += (register1Value * register2Value);
                             break;
                         case "C":
-                            accumulatorValue += (register1Value * register3Value) + instValue;
+                            accumulatorValue += (register1Value * register3Value);
                             break;
                         case "D":
-                            accumulatorValue += (register1Value * register4Value) + instValue;
+                            accumulatorValue += (register1Value * register4Value);
                             break;
                         default:
                             break;
@@ -404,16 +416,16 @@ namespace OPSYS_GUI_NThompson
                     switch (reg2)
                     {
                         case "A":
-                            accumulatorValue += (register2Value * register1Value) + instValue;
+                            accumulatorValue += (register2Value * register1Value);
                             break;
                         case "B":
-                            accumulatorValue += (register2Value * register2Value) + instValue;
+                            accumulatorValue += (register2Value * register2Value);
                             break;
                         case "C":
-                            accumulatorValue += (register2Value * register3Value) + instValue;
+                            accumulatorValue += (register2Value * register3Value);
                             break;
                         case "D":
-                            accumulatorValue += (register2Value * register4Value) + instValue;
+                            accumulatorValue += (register2Value * register4Value);
                             break;
                         default:
                             break;
@@ -423,16 +435,16 @@ namespace OPSYS_GUI_NThompson
                     switch (reg2)
                     {
                         case "A":
-                            accumulatorValue += (register3Value * register1Value) + instValue;
+                            accumulatorValue += (register3Value * register1Value);
                             break;
                         case "B":
-                            accumulatorValue += (register3Value * register2Value) + instValue;
+                            accumulatorValue += (register3Value * register2Value);
                             break;
                         case "C":
-                            accumulatorValue += (register3Value * register3Value) + instValue;
+                            accumulatorValue += (register3Value * register3Value);
                             break;
                         case "D":
-                            accumulatorValue += (register3Value * register4Value) + instValue;
+                            accumulatorValue += (register3Value * register4Value);
                             break;
                         default:
                             break;
@@ -442,16 +454,16 @@ namespace OPSYS_GUI_NThompson
                     switch (reg2)
                     {
                         case "A":
-                            accumulatorValue += (register4Value * register1Value) + instValue;
+                            accumulatorValue += (register4Value * register1Value);
                             break;
                         case "B":
-                            accumulatorValue += (register4Value * register2Value) + instValue;
+                            accumulatorValue += (register4Value * register2Value);
                             break;
                         case "C":
-                            accumulatorValue += (register4Value * register3Value) + instValue;
+                            accumulatorValue += (register4Value * register3Value);
                             break;
                         case "D":
-                            accumulatorValue += (register4Value * register4Value) + instValue;
+                            accumulatorValue += (register4Value * register4Value);
                             break;
                         default:
                             break;
@@ -469,16 +481,16 @@ namespace OPSYS_GUI_NThompson
                     switch (reg2)
                     {
                         case "A":
-                            accumulatorValue += (register1Value - register1Value) + instValue;
+                            accumulatorValue += (register1Value - register1Value);
                             break;
                         case "B":
-                            accumulatorValue += (register1Value - register2Value) + instValue;
+                            accumulatorValue += (register1Value - register2Value);
                             break;
                         case "C":
-                            accumulatorValue += (register1Value - register3Value) + instValue;
+                            accumulatorValue += (register1Value - register3Value);
                             break;
                         case "D":
-                            accumulatorValue += (register1Value - register4Value) + instValue;
+                            accumulatorValue += (register1Value - register4Value);
                             break;
                         default:
                             break;
@@ -488,16 +500,16 @@ namespace OPSYS_GUI_NThompson
                     switch (reg2)
                     {
                         case "A":
-                            accumulatorValue += (register2Value - register1Value) + instValue;
+                            accumulatorValue += (register2Value - register1Value);
                             break;
                         case "B":
-                            accumulatorValue += (register2Value - register2Value) + instValue;
+                            accumulatorValue += (register2Value - register2Value);
                             break;
                         case "C":
-                            accumulatorValue += (register2Value - register3Value) + instValue;
+                            accumulatorValue += (register2Value - register3Value);
                             break;
                         case "D":
-                            accumulatorValue += (register2Value - register4Value) + instValue;
+                            accumulatorValue += (register2Value - register4Value);
                             break;
                         default:
                             break;
@@ -507,16 +519,16 @@ namespace OPSYS_GUI_NThompson
                     switch (reg2)
                     {
                         case "A":
-                            accumulatorValue += (register3Value - register1Value) + instValue;
+                            accumulatorValue += (register3Value - register1Value);
                             break;
                         case "B":
-                            accumulatorValue += (register3Value - register2Value) + instValue;
+                            accumulatorValue += (register3Value - register2Value);
                             break;
                         case "C":
-                            accumulatorValue += (register3Value - register3Value) + instValue;
+                            accumulatorValue += (register3Value - register3Value);
                             break;
                         case "D":
-                            accumulatorValue += (register3Value - register4Value) + instValue;
+                            accumulatorValue += (register3Value - register4Value);
                             break;
                         default:
                             break;
@@ -526,16 +538,16 @@ namespace OPSYS_GUI_NThompson
                     switch (reg2)
                     {
                         case "A":
-                            accumulatorValue += (register4Value - register1Value) + instValue;
+                            accumulatorValue += (register4Value - register1Value);
                             break;
                         case "B":
-                            accumulatorValue += (register4Value - register2Value) + instValue;
+                            accumulatorValue += (register4Value - register2Value);
                             break;
                         case "C":
-                            accumulatorValue += (register4Value - register3Value) + instValue;
+                            accumulatorValue += (register4Value - register3Value);
                             break;
                         case "D":
-                            accumulatorValue += (register4Value - register4Value) + instValue;
+                            accumulatorValue += (register4Value - register4Value);
                             break;
                         default:
                             break;
@@ -553,16 +565,16 @@ namespace OPSYS_GUI_NThompson
                     switch (reg2)
                     {
                         case "A":
-                            accumulatorValue += (register1Value / register1Value) + instValue;
+                            accumulatorValue += (register1Value / register1Value);
                             break;
                         case "B":
-                            accumulatorValue += (register1Value / register2Value) + instValue;
+                            accumulatorValue += (register1Value / register2Value);
                             break;
                         case "C":
-                            accumulatorValue += (register1Value / register3Value) + instValue;
+                            accumulatorValue += (register1Value / register3Value);
                             break;
                         case "D":
-                            accumulatorValue += (register1Value / register4Value) + instValue;
+                            accumulatorValue += (register1Value / register4Value);
                             break;
                         default:
                             break;
@@ -572,16 +584,16 @@ namespace OPSYS_GUI_NThompson
                     switch (reg2)
                     {
                         case "A":
-                            accumulatorValue += (register2Value / register1Value) + instValue;
+                            accumulatorValue += (register2Value / register1Value);
                             break;
                         case "B":
-                            accumulatorValue += (register2Value / register2Value) + instValue;
+                            accumulatorValue += (register2Value / register2Value);
                             break;
                         case "C":
-                            accumulatorValue += (register2Value / register3Value) + instValue;
+                            accumulatorValue += (register2Value / register3Value);
                             break;
                         case "D":
-                            accumulatorValue += (register2Value / register4Value) + instValue;
+                            accumulatorValue += (register2Value / register4Value);
                             break;
                         default:
                             break;
@@ -591,16 +603,16 @@ namespace OPSYS_GUI_NThompson
                     switch (reg2)
                     {
                         case "A":
-                            accumulatorValue += (register2Value / register1Value) + instValue;
+                            accumulatorValue += (register2Value / register1Value);
                             break;
                         case "B":
-                            accumulatorValue += (register2Value / register2Value) + instValue;
+                            accumulatorValue += (register2Value / register2Value);
                             break;
                         case "C":
-                            accumulatorValue += (register2Value / register3Value) + instValue;
+                            accumulatorValue += (register2Value / register3Value);
                             break;
                         case "D":
-                            accumulatorValue += (register2Value / register4Value) + instValue;
+                            accumulatorValue += (register2Value / register4Value);
                             break;
                         default:
                             break;
@@ -610,16 +622,16 @@ namespace OPSYS_GUI_NThompson
                     switch (reg2)
                     {
                         case "A":
-                            accumulatorValue += (register3Value / register1Value) + instValue;
+                            accumulatorValue += (register3Value / register1Value);
                             break;
                         case "B":
-                            accumulatorValue += (register3Value / register2Value) + instValue;
+                            accumulatorValue += (register3Value / register2Value);
                             break;
                         case "C":
-                            accumulatorValue += (register3Value / register3Value) + instValue;
+                            accumulatorValue += (register3Value / register3Value);
                             break;
                         case "D":
-                            accumulatorValue += (register3Value / register4Value) + instValue;
+                            accumulatorValue += (register3Value / register4Value);
                             break;
                         default:
                             break;
