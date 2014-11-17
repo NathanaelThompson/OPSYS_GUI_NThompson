@@ -266,7 +266,7 @@ namespace OPSYS_GUI_NThompson
                     }
                 }
             }
-            StartForm.sortedPCBsInRAM = sortedPCBList;
+            StartForm.ram.SetJobsInRAM(sortedPCBList);
             //Gets the instructions from a PCB object's ID
             //Checks to see if they fit, then adds them
             int sizeOfRAM = StartForm.ram.GetRAMSize();
@@ -280,13 +280,18 @@ namespace OPSYS_GUI_NThompson
                 //if it fits, throw it in RAM
                 if ((lengthOfJob + totalLOI) < sizeOfRAM)
                 {
+                    pcb.baseAddress = totalLOI;
                     StartForm.ram.AddInstructionsToRAM(tempInstructions);
+
                 }
                 else//Otherwise, return the job to the hard drive, and remove it from the sortedPCBList
                 {
                     int lastIndex = sortedPCBList.IndexOf(pcb);
                     List<ProcessControlBlock> ramFullPCBList = sortedPCBList.GetRange(lastIndex, (sortedPCBList.Count - lastIndex));
-                    StartForm.hdd.ReturnJobsToHD(ramFullPCBList);
+                    if (StartForm.bigLoopCycles == 0)
+                    {
+                        StartForm.hdd.ReturnJobsToHD(ramFullPCBList);
+                    }
                     sortedPCBList.RemoveRange(lastIndex, (sortedPCBList.Count - lastIndex));
                     return sortedPCBList;
                 }

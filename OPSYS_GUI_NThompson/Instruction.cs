@@ -11,7 +11,18 @@ namespace OPSYS_GUI_NThompson
         //Instruction members
         string instructionType, register1, register2;
         int instructionLine, instructionValue, jobID, address;
-
+        private bool isNull;
+        public bool instIsNull
+        {
+            get
+            {
+                return isNull;
+            }
+            set
+            {
+                isNull = value;
+            }
+        }
         public int instructionAddress
         {
             get
@@ -28,6 +39,7 @@ namespace OPSYS_GUI_NThompson
         {
             //default Instruction Construction
             //See what I did there?
+
         }
         
         //Constructor describing individual instructions

@@ -26,7 +26,7 @@ namespace OPSYS_GUI_NThompson
         public void InstructionGridCreator()
         {
             DataGridView grid = new DataGridView();
-            instructionGrid.ColumnCount = 6;
+            instructionGrid.ColumnCount = 9;
             instructionGrid.Columns[0].Name = "Job Name";
             instructionGrid.Columns[1].Name = "Job Length";
             instructionGrid.Columns[2].Name = "Job Priority";

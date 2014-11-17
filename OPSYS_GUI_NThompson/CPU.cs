@@ -123,7 +123,7 @@ namespace OPSYS_GUI_NThompson
         {
             dspatcher = StartForm.dispatch;
             currentProgramState = currentPCB.programState;
-
+            bool lastInstruction = false;
             if (inst.GetInstructionLine() != 0)
             {
                 register1Value = currentProgramState.register1;
@@ -137,122 +137,134 @@ namespace OPSYS_GUI_NThompson
                 dspatcher.AddToTermQ(currentPCB,0);
             }
             
-                int inst_currentLine = inst.GetInstructionLine();
-                string instType = inst.GetInstructionType();
-                int instructionValue = inst.GetInstructionValue();
-                int instID = inst.GetJobID();
+            int inst_currentLine = inst.GetInstructionLine();
+            string instType = inst.GetInstructionType();
+            int instructionValue = inst.GetInstructionValue();
+            int instID = inst.GetJobID();
 
-                //psuedo lookup table
-                switch (instType)
-                {
-                    case "add"://add two registers, done
-                        MathDecisionFunction(inst);
-                        currentProgramState.lineOfExecution++;
-                        currentPCB.totalCycles++;
-                        dspatcher.DecrementQueueTimes();
-                        break;
-                    case "sub"://subtract two registers, done
-                        MathDecisionFunction(inst);
-                        currentProgramState.lineOfExecution++;
-                        currentPCB.totalCycles++;
-                        dspatcher.DecrementQueueTimes();
-                        break;
-                    case "mul"://multiply, done
-                        MathDecisionFunction(inst);
-                        currentProgramState.lineOfExecution++;
-                        currentPCB.totalCycles++;
-                        dspatcher.DecrementQueueTimes();
-                        break;
-                    case "div"://divide, done
-                        MathDecisionFunction(inst);
-                        currentProgramState.lineOfExecution++;
-                        currentPCB.totalCycles++;
-                        dspatcher.DecrementQueueTimes();
-                        break;
-                    case "_rd"://read, send job to io queue for X cycles
-                        //this needs to be reworked to include cycle values
-                        dspatcher.AddToIOQ(currentPCB, instructionValue);
-                        currentProgramState.lineOfExecution++;
-                        currentPCB.totalCycles++;
-                        dspatcher.DecrementQueueTimes();
-                        break;
-                    case "_wr"://write, send job to io queue for X cycles
-                        //this needs to be reworked
-                        dspatcher.AddToIOQ(currentPCB, instructionValue);
-                        currentProgramState.lineOfExecution++;
-                        currentPCB.totalCycles++;
-                        dspatcher.DecrementQueueTimes();
-                        break;
-                    case "_wt"://wait, send job to wait queue
-                        //this needs to be reworked
-                        dspatcher.AddToWaitQ(currentPCB, instructionValue);
-                        currentProgramState.lineOfExecution++;
-                        currentPCB.totalCycles++;
-                        dspatcher.DecrementQueueTimes();
-                        break;
-                    case "sto"://store value in acc, done
-                        accumulatorValue = instructionValue;
-                        currentProgramState.lineOfExecution++;
-                        currentPCB.totalCycles++;
-                        dspatcher.DecrementQueueTimes();
-                        break;
-                    case "rcl"://take acc value and assign to register, done
-                        Recall(inst);
-                        currentProgramState.lineOfExecution++;
-                        currentPCB.totalCycles++;
-                        dspatcher.DecrementQueueTimes();
-                        break;
-                    case "nul"://reset registers to default value, done
-                        register1 = 1;
-                        register2 = 3;
-                        register3 = 5;
-                        register4 = 7;
-                        accumulator = 9;
-                        currentProgramState.lineOfExecution++;
-                        currentPCB.totalCycles++;
-                        dspatcher.DecrementQueueTimes();
-                        break;
-                    case "stp"://halt execution, save state, return job to RQ
-                        currentProgramState.lineOfExecution = inst_currentLine + 1;
-                        currentProgramState.instructionType = instType;
-                        currentProgramState.instructionValue = instructionValue;
-                        currentProgramState.jobID = instID;
-                        currentProgramState.register1 = register1Value;
-                        currentProgramState.register2 = register2Value;
-                        currentProgramState.register3 = register3Value;
-                        currentProgramState.register4 = register4Value;
-                        currentPCB.programState = currentProgramState;
+            if (inst_currentLine + 1 >= currentPCB.GetPCBJobLength())
+            {
+                lastInstruction = true;
+            }
+            //psuedo lookup table
+            switch (instType)
+            {
+                case "add"://add two registers, done
+                    MathDecisionFunction(inst);
+                    currentProgramState.lineOfExecution++;
+                    currentPCB.totalCycles++;
+                    dspatcher.DecrementQueueTimes();
+                    break;
+                case "sub"://subtract two registers, done
+                    MathDecisionFunction(inst);
+                    currentProgramState.lineOfExecution++;
+                    currentPCB.totalCycles++;
+                    dspatcher.DecrementQueueTimes();
+                    break;
+                case "mul"://multiply, done
+                    MathDecisionFunction(inst);
+                    currentProgramState.lineOfExecution++;
+                    currentPCB.totalCycles++;
+                    dspatcher.DecrementQueueTimes();
+                    break;
+                case "div"://divide, done
+                    MathDecisionFunction(inst);
+                    currentProgramState.lineOfExecution++;
+                    currentPCB.totalCycles++;
+                    dspatcher.DecrementQueueTimes();
+                    break;
+                case "_rd"://read, send job to io queue for X cycles
+                    //this needs to be reworked to include cycle values
+                    dspatcher.AddToIOQ(currentPCB, instructionValue);
+                    currentProgramState.lineOfExecution++;
+                    currentPCB.totalCycles++;
+                    dspatcher.DecrementQueueTimes();
+                    break;
+                case "_wr"://write, send job to io queue for X cycles
+                    //this needs to be reworked
+                    dspatcher.AddToIOQ(currentPCB, instructionValue);
+                    currentProgramState.lineOfExecution++;
+                    currentPCB.totalCycles++;
+                    dspatcher.DecrementQueueTimes();
+                    break;
+                case "_wt"://wait, send job to wait queue
+                    //this needs to be reworked
+                    dspatcher.AddToWaitQ(currentPCB, instructionValue);
+                    currentProgramState.lineOfExecution++;
+                    currentPCB.totalCycles++;
+                    dspatcher.DecrementQueueTimes();
+                    break;
+                case "sto"://store value in acc, done
+                    accumulatorValue = instructionValue;
+                    currentProgramState.lineOfExecution++;
+                    currentPCB.totalCycles++;
+                    dspatcher.DecrementQueueTimes();
+                    break;
+                case "rcl"://take acc value and assign to register, done
+                    Recall(inst);
+                    currentProgramState.lineOfExecution++;
+                    currentPCB.totalCycles++;
+                    dspatcher.DecrementQueueTimes();
+                    break;
+                case "nul"://reset registers to default value, done
+                    register1 = 1;
+                    register2 = 3;
+                    register3 = 5;
+                    register4 = 7;
+                    accumulator = 9;
+                    currentProgramState.lineOfExecution++;
+                    currentPCB.totalCycles++;
+                    dspatcher.DecrementQueueTimes();
+                    break;
+                case "stp"://halt execution, save state, return job to RQ
+                    currentProgramState.lineOfExecution = inst_currentLine + 1;
+                    currentProgramState.instructionType = instType;
+                    currentProgramState.instructionValue = instructionValue;
+                    currentProgramState.jobID = instID;
+                    currentProgramState.register1 = register1Value;
+                    currentProgramState.register2 = register2Value;
+                    currentProgramState.register3 = register3Value;
+                    currentProgramState.register4 = register4Value;
+                    currentPCB.programState = currentProgramState;
 
-                        currentPCB.totalCycles++;
-                        dspatcher.DecrementQueueTimes();
+                    currentPCB.totalCycles++;
+                    dspatcher.DecrementQueueTimes();
 
-                        break;
-                    case "err"://error condition, save state to PCB and terminate program
-                        
-                        currentProgramState.lineOfExecution = inst_currentLine;
-                        currentProgramState.instructionType = instType;
-                        currentProgramState.instructionValue = instructionValue;
-                        currentProgramState.jobID = instID;
-                        currentProgramState.register1 = register1Value;
-                        currentProgramState.register2 = register2Value;
-                        currentProgramState.register3 = register3Value;
-                        currentProgramState.register4 = register4Value;
-                        currentPCB.programState = currentProgramState;
+                    break;
+                case "err"://error condition, save state to PCB and terminate program
 
-                        currentPCB.totalCycles++;
-                        dspatcher.DecrementQueueTimes();
+                    currentProgramState.lineOfExecution = inst_currentLine;
+                    currentProgramState.instructionType = instType;
+                    currentProgramState.instructionValue = instructionValue;
+                    currentProgramState.jobID = instID;
+                    currentProgramState.register1 = register1Value;
+                    currentProgramState.register2 = register2Value;
+                    currentProgramState.register3 = register3Value;
+                    currentProgramState.register4 = register4Value;
+                    currentPCB.programState = currentProgramState;
 
-                        break;
-                    default: //if SOMEHOW this case is called, it needs to be handled immediately
-                        MessageBox.Show("BLUE SCREEN OF DEATH." + "\nProcess ID: " +
-                            instID + "\nInstruction Type: " +
-                            instType + "\nLine of Execution: " +
-                            inst_currentLine + " Restart the OS to continue.",
-                            "What? No, it's totally blue. Shut up, you broke my thing. You are a thing breaker. Jerk.",
-                            MessageBoxButtons.OK, MessageBoxIcon.Stop);
-                        Application.Exit();
-                        break;
+                    currentPCB.totalCycles++;
+                    dspatcher.DecrementQueueTimes();
+
+                    break;
+                default: //if SOMEHOW this case is called, it needs to be handled immediately
+                    MessageBox.Show("BLUE SCREEN OF DEATH." + "\nProcess ID: " +
+                        instID + "\nInstruction Type: " +
+                        instType + "\nLine of Execution: " +
+                        inst_currentLine + " Restart the OS to continue.",
+                        "What? No, it's totally blue. Shut up, you broke my thing. You are a thing breaker. Jerk.",
+                        MessageBoxButtons.OK, MessageBoxIcon.Stop);
+                    Application.Exit();
+                    break;
                 
+            }
+            if (lastInstruction)
+            {
+                dspatcher.AddToTermQ(currentPCB, 0);
+            }
+            else
+            {
+                dspatcher.AddToReadyQ(currentPCB);
             }
         }
 

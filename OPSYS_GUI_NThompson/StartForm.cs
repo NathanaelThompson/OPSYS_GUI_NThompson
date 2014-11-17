@@ -22,14 +22,15 @@
  * 
  * Phase 2:  Jobs                                                                                  Instructions
  *         --------------------------------------------------------------------------------------------------------------------------------------------------------------------
- *         | Moves jobs from LTS to Ready/Wait queues (COMPLETE)                                 | Moves instructions from RAM to CPU (IN PROGRESS)                           |
- *         | Create Dispatcher class (IN PROGRESS)                                               | Create CPU class (IN PROGRESS)                                             |
+ *         | Moves jobs from LTS to Ready/Wait queues (COMPLETED)                                | Moves instructions from RAM to CPU (IN PROGRESS)                           |
+ *         | Create Dispatcher class (COMPLETED)                                                 | Create CPU class (COMPLETED)                                               |
  *         | Display Job Information to user (process ID, values in register upon termination)   | Process information in the CPU (fetch, decode, execute) (IN PROGRESS)      |
  *         |                                                                                     |   -Move data to and from registers and accumulator                         |
  *         |                                                                                     | Compact RAM at will (COMPLETEDish)                                         |
  *         --------------------------------------------------------------------------------------------------------------------------------------------------------------------
  * Phase 3: Implement multi-threaded environment
- *          Gather statistics about the various multi-CPU environments
+ *          Gather statistics about the various multi-CPU environments (I was thinking about this the other day, and I think doing everything in serial
+ *          might be faster.  Though I suppose that's not the point of this project.)
  *          Create graphs and report
  *
  */
@@ -112,6 +113,18 @@
  * 11/14/14: So my laptop crapped out on me yesterday.  Got no work done on anything. In fact, this is only working because safe
  *           mode is magical and allows visual studio to run for some reason.
  *          
+ *           I think the laptop is fixed.  I threw a system restore, a chkdsk, and 3 separate virus scanners at it, and it hasn't crashed today.
+ *           So...progress.  I don't know or care what helped, just that it did.
+ *           
+ * 11/15/14: Today, I need to address the piss poor addressing system of RAM.  The CPU instructions all work, the dispatcher is starting to 
+ *           get a little closer to finished.  Other than the addressing and the dispatcher, this project is pretty much done.  Still no crashes
+ *           since yesterday morning.
+ *           
+ *           OK, I've finally gotten around to testing the 10 or so RAM functions that I made earlier this week.  Many of them do not work.  In fact,
+ *           I would say none of them worked.  I was trying to check the instructionsInRAM List by accessing elements that hadn't yet been tampered with.
+ *           In other words, let's say I had a RAM size of 100, filled with 75 jobs.  I was trying to access the last 25 elements of that list.
+ *           But the way C# works, attempting to access those values, even if they were just null, is forbidden.  So I have rewritten/am rewriting all
+ *           of my RAM functions.
  */
 using System;
 using System.Collections.Generic;
@@ -135,15 +148,15 @@ namespace OPSYS_GUI_NThompson
         public static RAMObject ram;
         public static List<Instruction> instructions;
         public static List<ProcessControlBlock> pcbList;
-        public static List<ProcessControlBlock> finishedJobs = new List<ProcessControlBlock>();
+        public static List<ProcessControlBlock> finishedJobs;
         public static HardDrive hdd;
         public static Dispatcher dispatch = new Dispatcher();
         public static CPUObject cpu;
         public LongTermScheduler lts = new LongTermScheduler();
         public int ltsAlg;
-
+        DisplayForm dspForm = new DisplayForm();
         //For testing purposes only
-        public static List<ProcessControlBlock> sortedPCBsInRAM;
+        public List<ProcessControlBlock> sortedPCBsInRAM;
         
         #endregion
         public StartForm()
@@ -167,7 +180,7 @@ namespace OPSYS_GUI_NThompson
             //if ramBox is empty, initialize RAM with size 100
             if (ramBox.Text == "")
             {
-                ram = new RAMObject(100);
+                ram = new RAMObject(2048);
             }
             else
             {
@@ -240,34 +253,87 @@ namespace OPSYS_GUI_NThompson
             #endregion
             cpu = new CPUObject();
             BigLoop();
+            
+            dspForm.Show();
 
         }//end "go" button
 
-        public int bigLoopCycles = 0;
+        public static int bigLoopCycles = 0;
         Queue<ProcessControlBlock> pcbQueueHD;
-        List<ProcessControlBlock> pcbListToLTS;
+        static List<ProcessControlBlock> pcbListToLTS;
         public void BigLoop()
         {
-            
+            finishedJobs = new List<ProcessControlBlock>();
             //could be rewritten as a foreach loop
-            while(true){
+            while(HardDrive.pcbList.Count > finishedJobs.Count){
                 //Squishes jobs in RAM together
                 ram.CompactRAM();
+                ProcessControlBlock pcbToAdd = sortedPCBsInRAM[0];
+
+                //if the ready queue contains this pcb
+                if (dispatch.readyQ.Contains(pcbToAdd))
+                {
+                    //but another job was added to the ready queue
+                    if (CheckReadyQ())
+                    {
+                        //do nothing, because a job was added to the ReadyQ
+                    }
+                    else //and no other job was added
+                    {
+                        dispatch.DecrementQueueTimes();
+                    }
+                }
+                else
+                {
+                    dispatch.DispatchInitialQueue(pcbToAdd);
+                }
+                ProcessControlBlock aPCB = new ProcessControlBlock();
+                aPCB = dispatch.GetJobFromReadyQ(sortedPCBsInRAM);
+                if (aPCB.destination == "Fail")
+                {
+                    if (ltsAlg == 0)
+                    {
+                        lts.FirstComeFirstServe(pcbListToLTS);
+                    }
+                    else if (ltsAlg == 1)
+                    {
+                        lts.ShortestJobFirst(pcbListToLTS);
+                    }
+                    else if (ltsAlg == 2)
+                    {
+                        lts.PrioritySort(pcbListToLTS);
+                    }
+                    else
+                    {
+                        MessageBox.Show("BLUE SCREEN OF DEATH." +
+                            "\nLTS algorithm = " + ltsAlg +
+                            "\nRestart the OS to continue.",
+                            "What? No, it's totally blue. Shut up, you broke my thing. You are a thing breaker. Jerk.",
+                            MessageBoxButtons.OK, MessageBoxIcon.Stop);
+                        Application.Exit();
+                    }
+                }
+                else
+                {
+                    cpu.Fetch(aPCB);
+                }
                 
-                dispatch.DispatchInitialQueue(sortedPCBsInRAM[bigLoopCycles]);
-                cpu.Fetch(dispatch.readyQ.Dequeue());
-                bigLoopCycles++;
 
                 //check the hard drive for jobs, then send to the LTS
-                pcbQueueHD = hdd.jobsWaitingHD;
-                pcbListToLTS = new List<ProcessControlBlock>(pcbQueueHD);
+                if (bigLoopCycles == 0)
+                {
+                    pcbQueueHD = HardDrive.jobsWaitingHD;
+                    pcbListToLTS = new List<ProcessControlBlock>(pcbQueueHD);
+                }
+                bigLoopCycles++;
+
 
                 if (pcbListToLTS.Count <= 0)
                 {
+                    break;
                     //Launch display form
-                    DisplayForm dspForm = new DisplayForm();
-                    dspForm.Show();
-                    Application.Exit();
+
+
                 }
                 else
                 {
@@ -294,7 +360,22 @@ namespace OPSYS_GUI_NThompson
                     }
                 }
             }//end foreach
+            
         }//end BigLoop()
+        public bool CheckReadyQ()
+        {
+            bool jobAddedToReadyQ = false;
+            foreach (ProcessControlBlock pcb in sortedPCBsInRAM)
+            {
+                if (!(StartForm.dispatch.readyQ.Contains(pcb)))
+                {
+                    StartForm.dispatch.AddToReadyQ(pcb);
+                    jobAddedToReadyQ = true;
+                    break;
+                }
+            }
+            return jobAddedToReadyQ;
+        }
         private void helpButton_Click(object sender, EventArgs e)
         {
             string helpMessage = "If you press the 'Go' button, this program will use default values for processing.\n\n" +
