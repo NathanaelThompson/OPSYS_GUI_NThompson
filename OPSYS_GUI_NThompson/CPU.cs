@@ -107,7 +107,10 @@ namespace OPSYS_GUI_NThompson
             accumulator = acc;
             programCounter = pc;
         }
-
+        public void NOP()
+        {
+            //do nothing, used when waiting on jobs in the IO queue
+        }
         
         ProgramState currentProgramState = new ProgramState();
         public void Fetch(ProcessControlBlock pcb)
@@ -115,13 +118,24 @@ namespace OPSYS_GUI_NThompson
             //sets the program state, program counter, gets the instruction from RAM, then decodes and Executes it
             ProgramState pgst = new ProgramState();
             pgst = pcb.programState;
-            if (pgst.lineOfExecution > pcb.GetPCBJobLength()-1)
+            programCounter = pcb.baseAddress + pgst.lineOfExecution;
+            //ProcessControlBlock currentPCB = dspatcher.GetJobFromReadyQ(StartForm.ram.GetJobsInRAM());
+            if (programCounter > StartForm.ram.GetInstructionsInRAM().Count-1 || programCounter > pcb.GetPCBJobLength())
             {
                 dspatcher.AddToTermQ(pcb, 0);
+                List<ProcessControlBlock> pcbsInReadyQ = new List<ProcessControlBlock>(StartForm.dispatch.readyQ);
+                pcbsInReadyQ.Remove(pcb);
+                StartForm.dispatch.readyQ.Clear();
+                foreach (ProcessControlBlock tempPCB in pcbsInReadyQ)
+                {
+                    StartForm.dispatch.readyQ.Enqueue(tempPCB);
+                }
             }
-            programCounter = pcb.baseAddress + pgst.lineOfExecution;
-            Instruction currentInstruction = StartForm.ram.GetInstructionInRAM(programCounter);
-            DecodeAndExecute(currentInstruction, pcb);
+            else
+            {
+                Instruction currentInstruction = StartForm.ram.GetInstructionInRAM(programCounter);
+                DecodeAndExecute(currentInstruction, pcb);
+            }
         }
         Dispatcher dspatcher = new Dispatcher();
         
@@ -276,6 +290,13 @@ namespace OPSYS_GUI_NThompson
             if (lastInstruction)
             {
                 dspatcher.AddToTermQ(currentPCB, 0);
+                List<ProcessControlBlock> pcbsInReadyQ = new List<ProcessControlBlock>(StartForm.dispatch.readyQ);
+                pcbsInReadyQ.Remove(currentPCB);
+                StartForm.dispatch.readyQ.Clear();
+                foreach (ProcessControlBlock tempPCB in pcbsInReadyQ)
+                {
+                    StartForm.dispatch.readyQ.Enqueue(tempPCB);
+                }
             }
             else
             {

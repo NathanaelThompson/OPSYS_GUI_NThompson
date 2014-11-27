@@ -417,6 +417,15 @@ namespace OPSYS_GUI_NThompson
                 readyQ.Peek().programState = pcb.programState;
                 readyQ.Peek().totalCycles = pcb.totalCycles;
                 readyQ.Peek().waitCycles = pcb.waitCycles;
+                readyQ.Peek().programState.accumulator = pcb.programState.accumulator;
+                readyQ.Peek().programState.instructionType = pcb.programState.instructionType;
+                readyQ.Peek().programState.instructionValue = pcb.programState.instructionValue;
+                readyQ.Peek().programState.jobID = pcb.programState.jobID;
+                readyQ.Peek().programState.lineOfExecution = pcb.programState.lineOfExecution;
+                readyQ.Peek().programState.register1 = pcb.programState.register1;
+                readyQ.Peek().programState.register2 = pcb.programState.register2;
+                readyQ.Peek().programState.register3 = pcb.programState.register3;
+                readyQ.Peek().programState.register4 = pcb.programState.register4;
             }
         }
     }

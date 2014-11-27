@@ -34,66 +34,66 @@ namespace OPSYS_GUI_NThompson
         //This function could DEFINITELY use a re-write.
         public void CompactRAM()
         {
-            int address = 0;
+            //int address = 0;
             
-            //size = size of RAM
-            //This was orignially a foreach loop, but it wasn't moving to the empty slots in RAM
-            for (int i = 0; i < size; i++)
-            {
-                //If this tries to access an out of bounds array element, breaks out of the for loop
-                if((i + 1) > instructionsInRAM.Count || (address + 1) > instructionsInRAM.Count)
-                {
-                    break;
-                }
+            ////size = size of RAM
+            ////This was orignially a foreach loop, but it wasn't moving to the empty slots in RAM
+            //for (int i = 0; i < size; i++)
+            //{
+            //    //If this tries to access an out of bounds array element, breaks out of the for loop
+            //    if((i + 1) > instructionsInRAM.Count || (address + 1) > instructionsInRAM.Count)
+            //    {
+            //        break;
+            //    }
 
-                //this SHOULD be getting an instruction from RAM
-                Instruction inst = new Instruction();
-                inst = instructionsInRAM[address];
+            //    //this SHOULD be getting an instruction from RAM
+            //    Instruction inst = new Instruction();
+            //    inst = instructionsInRAM[address];
 
-                //ask that instruction if it is null
-                //if it isn't null, attempt to squish it inside of RAM
-                //if it is null, address++
-                if (!(inst.instIsNull))
-                {
-                    ProcessControlBlock pcb = new ProcessControlBlock();
-                    pcb = inst.GetPCB(inst.GetJobID());
+            //    //ask that instruction if it is null
+            //    //if it isn't null, attempt to squish it inside of RAM
+            //    //if it is null, address++
+            //    //if (!(inst.instIsNull))
+            //    //{
+            //    //    ProcessControlBlock pcb = new ProcessControlBlock();
+            //    //    pcb = inst.GetPCB(inst.GetJobID());
                     
-                    inst.GetPCB(inst.GetJobID()).baseAddress = address;
-                    MoveJobInRAM(pcb, pcb.baseAddress);
-                    address += inst.GetPCB(inst.GetJobID()).GetPCBJobLength();
-                }
-                else
-                {
-                    address++;
-                }
-            }
+            //    //    inst.GetPCB(inst.GetJobID()).baseAddress = address;
+            //    //    MoveJobInRAM(pcb, pcb.baseAddress);
+            //    //    address += inst.GetPCB(inst.GetJobID()).GetPCBJobLength();
+            //    //}
+            //    //else
+            //    //{
+            //    //    address++;
+            //    //}
+            //}
 
-            //If there are jobs waiting on the hard drive, attempt to add them to RAM
-            Queue<ProcessControlBlock> hdWaitQ = HardDrive.jobsWaitingHD;
-            if (hdWaitQ.Count <= 0)
-            {
-                return;
-            }
-            else
-            {
-                ProcessControlBlock hdPCBToAdd = new ProcessControlBlock();
-                hdPCBToAdd = hdWaitQ.Peek();
-                AddJobToRAM(hdPCBToAdd);
-                if (jobAdded)
-                {
-                    hdWaitQ.Dequeue();
-                }
-            }
+            ////If there are jobs waiting on the hard drive, attempt to add them to RAM
+            //Queue<ProcessControlBlock> hdWaitQ = HardDrive.jobsWaitingHD;
+            //if (hdWaitQ.Count <= 0)
+            //{
+            //    return;
+            //}
+            //else
+            //{
+            //    ProcessControlBlock hdPCBToAdd = new ProcessControlBlock();
+            //    hdPCBToAdd = hdWaitQ.Peek();
+            //    AddJobToRAM(hdPCBToAdd);
+            //    if (jobAdded)
+            //    {
+            //        hdWaitQ.Dequeue();
+            //    }
+            //}
             
-            //Once all the jobs and such have been added/compacted/whatever
-            //This should reassign all the Instruction addresses
-            //Originally a regular for loop, would throw an out of bounds error
-            int instIndex = 0;
-            foreach(Instruction inst in instructionsInRAM)
-            {
-                instructionsInRAM[instIndex].instructionAddress = instIndex;
-                instIndex++;
-            }
+            ////Once all the jobs and such have been added/compacted/whatever
+            ////This should reassign all the Instruction addresses
+            ////Originally a regular for loop, would throw an out of bounds error
+            //int instIndex = 0;
+            //foreach(Instruction inst in instructionsInRAM)
+            //{
+            //    instructionsInRAM[instIndex].instructionAddress = instIndex;
+            //    instIndex++;
+            //}
         }
 
         //If RAM gets corrupted, this will be the function to derail it
@@ -152,7 +152,7 @@ namespace OPSYS_GUI_NThompson
             }
             if (!instFit)
             {
-                RemoveJobFromRAM(instructs[0].GetPCB(instructs[0].GetJobID()));
+                jobAdded = false;
             }
             else
             {

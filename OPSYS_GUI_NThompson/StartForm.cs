@@ -325,6 +325,7 @@ namespace OPSYS_GUI_NThompson
                 cpuList.Add(tempCPU);
             }
             testCPU = cpuList[0];
+
             while(pcbList.Count > finishedJobs.Count)
             {
                 //Squishes jobs in RAM together
@@ -356,7 +357,7 @@ namespace OPSYS_GUI_NThompson
                 //If there was a failure in selecting a PCB
                 if (aPCB.destination == "Fail")
                 {
-                    //do nothing
+                    dispatch.DecrementQueueTimes();
                 }
                 else
                 {
