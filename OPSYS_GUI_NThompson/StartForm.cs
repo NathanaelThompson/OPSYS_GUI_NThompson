@@ -165,9 +165,10 @@ namespace OPSYS_GUI_NThompson
         public static List<ProcessControlBlock> finishedJobs;
         public static HardDrive hdd;
         public static Dispatcher dispatch = new Dispatcher();
-        public static CPUObject cpu;
+        public static List<CPUObject> cpuList;
         public LongTermScheduler lts = new LongTermScheduler();
         public int ltsAlg;
+        public int numCPUs = 0;
         DisplayForm dspForm = new DisplayForm();
         //For testing purposes only
         public List<ProcessControlBlock> sortedPCBsInRAM;
@@ -243,7 +244,18 @@ namespace OPSYS_GUI_NThompson
                 ltsAlg = 0;
                 scheduleAst.Visible = false;
                 lts.FirstComeFirstServe(pcbList);
-                sortedPCBsInRAM = pcbList;
+                sortedPCBsInRAM = new List<ProcessControlBlock>();
+                foreach (ProcessControlBlock pcb in pcbList)
+                {
+                    if (pcb.location == "RAM")
+                    {
+                        sortedPCBsInRAM.Add(pcb);
+                    }
+                    else
+                    {
+                        pcb.location = "Hard Drive";
+                    }
+                }
             }
             else if (scheduleCB.SelectedItem.ToString() == "Shortest Job First")
             {   //Shortest Job First
@@ -265,7 +277,35 @@ namespace OPSYS_GUI_NThompson
                 return;
             }
             #endregion
-            cpu = new CPUObject();
+            
+            try
+            {
+                if (processorBox.Text == "")
+                {
+                    numCPUs = 1;
+                    cpuList = new List<CPUObject>(numCPUs);
+                }
+                else
+                {
+                    numCPUs = Int32.Parse(processorBox.Text);
+                    if (numCPUs > 8 || numCPUs < 0)
+                    {
+                        MessageBox.Show("Number of Processors cannot exceed 8. Enter a number from 1 to 8 and try again.",
+                            "Input Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                    else
+                    {
+                        cpuList = new List<CPUObject>(numCPUs);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Number of Processors invalid. Enter an integer value and try again.",
+                    "Input Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             BigLoop();
             
             dspForm.Show();
@@ -275,10 +315,16 @@ namespace OPSYS_GUI_NThompson
         public static int bigLoopCycles = 0;
         Queue<ProcessControlBlock> pcbQueueHD;
         static List<ProcessControlBlock> pcbListToLTS;
+        public static CPUObject testCPU = new CPUObject();
         public void BigLoop()
         {
             finishedJobs = new List<ProcessControlBlock>();
-            
+            for(int i = 0; i<cpuList.Capacity; i++)
+            {
+                CPUObject tempCPU = new CPUObject();
+                cpuList.Add(tempCPU);
+            }
+            testCPU = cpuList[0];
             while(pcbList.Count > finishedJobs.Count)
             {
                 //Squishes jobs in RAM together
@@ -306,7 +352,7 @@ namespace OPSYS_GUI_NThompson
 
                 ProcessControlBlock aPCB = new ProcessControlBlock();
                 aPCB = dispatch.GetJobFromReadyQ(sortedPCBsInRAM);
-
+                
                 //If there was a failure in selecting a PCB
                 if (aPCB.destination == "Fail")
                 {
@@ -315,7 +361,7 @@ namespace OPSYS_GUI_NThompson
                 else
                 {
                     //Also runs DecodeAndExecute() and decrements queue times
-                    cpu.Fetch(aPCB);
+                    testCPU.Fetch(aPCB);
                 }
 
                 bigLoopCycles++;

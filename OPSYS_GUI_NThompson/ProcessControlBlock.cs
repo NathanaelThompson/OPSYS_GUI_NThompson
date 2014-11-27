@@ -47,15 +47,16 @@ namespace OPSYS_GUI_NThompson
             get;
             set;
         }
+        private int limitAddressValue;
         public int limitAddress
         {
             get
             {
-                return baseAddress + jobLength;
+                return limitAddressValue;
             }
             set
             {
-                limitAddress = value;
+                limitAddressValue = value;
             }
         }
         public int waitCycles

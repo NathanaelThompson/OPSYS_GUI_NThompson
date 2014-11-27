@@ -20,7 +20,7 @@ namespace OPSYS_GUI_NThompson
         {
             size = sz;
             instructionsInRAM = new List<Instruction>(size);
-            
+            pcbsInRAM = new List<ProcessControlBlock>();
         }
 
         //default constructor
@@ -28,6 +28,7 @@ namespace OPSYS_GUI_NThompson
         {
             size = 100;
             instructionsInRAM = new List<Instruction>(size);
+            pcbsInRAM = new List<ProcessControlBlock>();
             
         }
         //This function could DEFINITELY use a re-write.
@@ -146,7 +147,7 @@ namespace OPSYS_GUI_NThompson
                     instFit = true;
                     instructionsInRAM.Add(inst);
                     int instAddress = instructionsInRAM.IndexOf(inst);
-                    inst.instructionAddress = instAddress;
+                    inst.instructionAddress = instIndex + inst.GetInstructionLine();
                 }
             }
             if (!instFit)
@@ -157,6 +158,7 @@ namespace OPSYS_GUI_NThompson
             {
 
                 jobAdded = true;
+                
             }
         }
 
@@ -166,29 +168,12 @@ namespace OPSYS_GUI_NThompson
             List<Instruction> instructsToAdd = pcb.GetInstructions(pcb.GetPCBID());
             pcbsInRAM.Add(pcb);
             AddInstructionsToRAM(instructsToAdd);
-            pcb.location = "RAM";
+            
             if (jobAdded == true && (pcb.destination != "IO" || pcb.destination != "Wait"))
             {
+                pcb.location = "RAM";
                 pcb.destination = "Ready";
             }
-
-            //int address = 0;
-            //foreach (Instruction instruction in instructionsInRAM)
-            //{
-            //    if (instructionsInRAM.Contains(null))
-            //    {
-            //        int ramGap = GetRAMGap(address);
-            //        if (pcb.GetPCBJobLength() <= ramGap)
-            //        {
-            //            StartForm.ram.AddInstructionsToRAM(pcb.GetInstructions(pcb.GetPCBID()));
-            //        }
-            //        else
-            //        {
-            //            StartForm.hdd.ReturnJobToHD(pcb);
-            //        }
-            //    }
-            //    address++;
-            //}
         }
 
         //Gets one instruction in RAM

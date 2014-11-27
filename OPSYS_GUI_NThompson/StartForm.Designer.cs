@@ -117,7 +117,6 @@
             // 
             // processorBox
             // 
-            this.processorBox.Enabled = false;
             this.processorBox.Location = new System.Drawing.Point(230, 81);
             this.processorBox.Name = "processorBox";
             this.processorBox.Size = new System.Drawing.Size(178, 22);

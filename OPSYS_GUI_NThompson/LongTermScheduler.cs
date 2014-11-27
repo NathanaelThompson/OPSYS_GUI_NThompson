@@ -37,11 +37,11 @@ namespace OPSYS_GUI_NThompson
                     pcb.baseAddress = totalLOI;
                     if (pcb.baseAddress == 0)
                     {
-
+                        pcb.limitAddress = lengthOfJob;
                     }
                     else
                     {
-                        pcb.baseAddress += 1;
+                        pcb.limitAddress = pcb.baseAddress + lengthOfJob;
                     }
                     StartForm.ram.AddJobToRAM(pcb);
                 }
@@ -51,9 +51,10 @@ namespace OPSYS_GUI_NThompson
                     int lastIndex = unsortedPCB.IndexOf(pcb);
                     List<ProcessControlBlock> ramFullPCBList = unsortedPCB.GetRange(lastIndex, (unsortedPCB.Count - lastIndex));
                     StartForm.hdd.ReturnJobsToHD(ramFullPCBList);
+                    break;
                 }
 
-                totalLOI += lengthOfJob;
+                totalLOI += lengthOfJob + 1;
             }
         }
 
@@ -171,11 +172,11 @@ namespace OPSYS_GUI_NThompson
                     pcb.baseAddress = totalLOI;
                     if (pcb.baseAddress == 0)
                     {
-
+                        pcb.limitAddress = lengthOfJob;
                     }
                     else
                     {
-                        pcb.baseAddress += 1;
+                        pcb.limitAddress = pcb.baseAddress + lengthOfJob;
                     }
                     StartForm.ram.AddJobToRAM(pcb);
                 }
@@ -190,7 +191,7 @@ namespace OPSYS_GUI_NThompson
                     sortedPCBList.RemoveRange(lastIndex, (sortedPCBList.Count - lastIndex));
                     return sortedPCBList;
                 }
-                totalLOI += lengthOfJob;
+                totalLOI += lengthOfJob + 1;
             }
             return sortedPCBList;
         }
@@ -315,11 +316,11 @@ namespace OPSYS_GUI_NThompson
                     pcb.destination = "Ready";
                     if (pcb.baseAddress == 0)
                     {
-                        //do nothing, because 0 is the correct base address
+                        pcb.limitAddress = lengthOfJob;
                     }
                     else
                     {
-                        pcb.baseAddress += 1;
+                        pcb.limitAddress = pcb.baseAddress + lengthOfJob;
                     }
                     StartForm.ram.AddJobToRAM(pcb);
                 }
@@ -334,7 +335,7 @@ namespace OPSYS_GUI_NThompson
                     sortedPCBList.RemoveRange(lastIndex, (sortedPCBList.Count - lastIndex));
                     return sortedPCBList;
                 }
-                totalLOI += lengthOfJob;
+                totalLOI += lengthOfJob + 1;
             }
             return sortedPCBList;
         }
@@ -347,7 +348,7 @@ namespace OPSYS_GUI_NThompson
             {
                 if ((sortedPCBsInHD[i].GetPCBJobLength() + numOfRAMInst) < StartForm.ram.GetRAMSize())
                 {
-                    sortedPCBsInHD[i].destination = "Ready";
+                    sortedPCBsInHD[i].destination = "RAM";
                     StartForm.ram.AddJobToRAM(sortedPCBsInHD[i]);
                     StartForm.ram.AddInstructionsToRAM(sortedPCBsInHD[i].GetInstructions(sortedPCBsInHD[i].GetPCBID()));
                 }

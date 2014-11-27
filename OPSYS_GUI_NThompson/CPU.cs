@@ -108,12 +108,17 @@ namespace OPSYS_GUI_NThompson
             programCounter = pc;
         }
 
-        ProgramState pgst = new ProgramState();
+        
         ProgramState currentProgramState = new ProgramState();
         public void Fetch(ProcessControlBlock pcb)
         {
             //sets the program state, program counter, gets the instruction from RAM, then decodes and Executes it
+            ProgramState pgst = new ProgramState();
             pgst = pcb.programState;
+            if (pgst.lineOfExecution > pcb.GetPCBJobLength()-1)
+            {
+                dspatcher.AddToTermQ(pcb, 0);
+            }
             programCounter = pcb.baseAddress + pgst.lineOfExecution;
             Instruction currentInstruction = StartForm.ram.GetInstructionInRAM(programCounter);
             DecodeAndExecute(currentInstruction, pcb);
@@ -122,12 +127,13 @@ namespace OPSYS_GUI_NThompson
         
         public void DecodeAndExecute(Instruction inst, ProcessControlBlock currentPCB)
         {
+            
             currentPCB.location = "CPU";
             currentPCB.destination = "Ready";
             dspatcher = StartForm.dispatch;
             currentProgramState = currentPCB.programState;
             
-            //have a small problem when checking for lastInstructions
+            //have a small problem when checking for lastInstruction
             bool lastInstruction = false;
 
             //If a job has been here before, get the program state
@@ -139,10 +145,6 @@ namespace OPSYS_GUI_NThompson
                 register4Value = currentProgramState.register4;
                 accumulatorValue = currentProgramState.accumulator;
             }
-            else if(inst.GetInstructionLine() + 1 > currentPCB.GetPCBJobLength())
-            {
-                dspatcher.AddToTermQ(currentPCB,0);
-            }
             
             int inst_currentLine = inst.GetInstructionLine();
             string instType = inst.GetInstructionType();
@@ -153,6 +155,7 @@ namespace OPSYS_GUI_NThompson
             {
                 lastInstruction = true;
             }
+
             //psuedo lookup table
             switch (instType)
             {
@@ -181,6 +184,7 @@ namespace OPSYS_GUI_NThompson
                     dspatcher.DecrementQueueTimes();
                     break;
                 case "_rd"://read, send job to io queue for X cycles, done
+                    dspatcher.readyQ.Dequeue();
                     currentPCB.destination = "IO";
                     dspatcher.AddToIOQ(currentPCB, instructionValue);
                     currentProgramState.lineOfExecution++;
@@ -188,6 +192,7 @@ namespace OPSYS_GUI_NThompson
                     dspatcher.DecrementQueueTimes();
                     break;
                 case "_wr"://write, send job to io queue for X cycles, done
+                    dspatcher.readyQ.Dequeue();
                     currentPCB.destination = "IO";
                     dspatcher.AddToIOQ(currentPCB, instructionValue);
                     currentProgramState.lineOfExecution++;
@@ -195,6 +200,7 @@ namespace OPSYS_GUI_NThompson
                     dspatcher.DecrementQueueTimes();
                     break;
                 case "_wt"://wait, send job to wait queue, done
+                    dspatcher.readyQ.Dequeue();
                     currentPCB.destination = "Wait";
                     dspatcher.AddToWaitQ(currentPCB, instructionValue);
                     currentProgramState.lineOfExecution++;
@@ -235,11 +241,12 @@ namespace OPSYS_GUI_NThompson
                     currentPCB.programState = currentProgramState;
 
                     currentPCB.totalCycles++;
+                    dspatcher.AddToReadyQ(currentPCB);
                     dspatcher.DecrementQueueTimes();
 
                     break;
                 case "err"://error condition, save state to PCB and terminate program, done
-
+                    dspatcher.readyQ.Dequeue();
                     currentProgramState.lineOfExecution = inst_currentLine;
                     currentProgramState.instructionType = instType;
                     currentProgramState.instructionValue = instructionValue;
@@ -251,6 +258,7 @@ namespace OPSYS_GUI_NThompson
                     currentPCB.programState = currentProgramState;
 
                     currentPCB.totalCycles++;
+                    dspatcher.AddToTermQ(currentPCB, 0);
                     dspatcher.DecrementQueueTimes();
 
                     break;
@@ -271,7 +279,8 @@ namespace OPSYS_GUI_NThompson
             }
             else
             {
-                dspatcher.AddToReadyQ(currentPCB);
+                //dspatcher.AddToReadyQ(currentPCB);
+                dspatcher.UpdateFrontOfRQ(currentPCB);
             }
         }
 

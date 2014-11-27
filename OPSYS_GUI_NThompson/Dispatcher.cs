@@ -245,7 +245,6 @@ namespace OPSYS_GUI_NThompson
                     //change the "fail flag"
                     if ((pcb.location == "IO" || pcb.location == "Wait") && pcb.waitCycles == 0)
                     {
-                        pcb.location = "Ready";
                         pcb.destination = "Ready";
                         AddToReadyQ(pcb);
                         tempPCB = pcb;
@@ -288,7 +287,7 @@ namespace OPSYS_GUI_NThompson
             }
             else
             {
-                return readyQ.Dequeue();
+                return readyQ.Peek();
             }
         }
 
@@ -403,5 +402,22 @@ namespace OPSYS_GUI_NThompson
             }
         }
 
+        public void UpdateFrontOfRQ(ProcessControlBlock pcb)
+        {
+            if (readyQ.Count <= 0)
+            {
+                readyQ.Enqueue(pcb);
+            }
+            else
+            {
+                readyQ.Peek().baseAddress = pcb.baseAddress;
+                readyQ.Peek().destination = pcb.destination;
+                readyQ.Peek().limitAddress = pcb.limitAddress;
+                readyQ.Peek().location = pcb.location;
+                readyQ.Peek().programState = pcb.programState;
+                readyQ.Peek().totalCycles = pcb.totalCycles;
+                readyQ.Peek().waitCycles = pcb.waitCycles;
+            }
+        }
     }
 }
