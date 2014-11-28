@@ -37,11 +37,11 @@ namespace OPSYS_GUI_NThompson
                     pcb.baseAddress = totalLOI;
                     if (pcb.baseAddress == 0)
                     {
-                        pcb.limitAddress = lengthOfJob;
+                        pcb.limitAddress = lengthOfJob - 1;
                     }
                     else
                     {
-                        pcb.limitAddress = pcb.baseAddress + lengthOfJob;
+                        pcb.limitAddress = pcb.baseAddress + lengthOfJob - 1;
                     }
                     StartForm.ram.AddJobToRAM(pcb);
                 }
@@ -54,7 +54,7 @@ namespace OPSYS_GUI_NThompson
                     break;
                 }
 
-                totalLOI += lengthOfJob + 1;
+                totalLOI += lengthOfJob;
             }
         }
 
@@ -344,18 +344,11 @@ namespace OPSYS_GUI_NThompson
         public void SortedAdd(List<ProcessControlBlock> sortedPCBsInHD)
         {
             int numOfRAMInst = StartForm.ram.GetInstructionsInRAM().Count;
-            for (int i = 0; i < sortedPCBsInHD.Count; i++)
+            if ((sortedPCBsInHD[0].GetPCBJobLength() + numOfRAMInst) < StartForm.ram.GetRAMSize())
             {
-                if ((sortedPCBsInHD[i].GetPCBJobLength() + numOfRAMInst) < StartForm.ram.GetRAMSize())
-                {
-                    sortedPCBsInHD[i].destination = "RAM";
-                    StartForm.ram.AddJobToRAM(sortedPCBsInHD[i]);
-                    StartForm.ram.AddInstructionsToRAM(sortedPCBsInHD[i].GetInstructions(sortedPCBsInHD[i].GetPCBID()));
-                }
-                else
-                {
-                    break;
-                }
+                sortedPCBsInHD[0].destination = "RAM";
+                StartForm.ram.AddJobToRAM(sortedPCBsInHD[0]);
+                StartForm.ram.AddInstructionsToRAM(sortedPCBsInHD[0].GetInstructions(sortedPCBsInHD[0].GetPCBID()));
             }
         }
     }

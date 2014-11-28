@@ -65,6 +65,10 @@ namespace OPSYS_GUI_NThompson
                         AddToReadyQ(pcb);
                     }
                 }
+                else if(pcb.destination == "Term")
+                {
+                    AddToTermQ(pcb, 0);
+                }
                 else
                 {
                     //AddToWaitQ(pcb, pcb.waitCycles);
@@ -153,6 +157,20 @@ namespace OPSYS_GUI_NThompson
                     pcb.location = "Wait";
                     pcb.destination = "Ready";
                     waitQ.Enqueue(pcb);
+                    List<ProcessControlBlock> readyQPCBs = new List<ProcessControlBlock>(readyQ);
+                    readyQ.Clear();
+                    foreach (ProcessControlBlock readyQPCB in readyQPCBs)
+                    {
+                        if (pcb.GetPCBID() == readyQPCB.GetPCBID())
+                        {
+                            readyQPCBs.Remove(readyQPCB);
+
+                        }
+                        else
+                        {
+                            readyQ.Enqueue(readyQPCB);
+                        }
+                    }
                 }
             }
         }
@@ -186,6 +204,20 @@ namespace OPSYS_GUI_NThompson
                     pcb.location = "IO";
                     pcb.destination = "Ready";
                     ioQ.Enqueue(pcb);
+                    List<ProcessControlBlock> readyQPCBs = new List<ProcessControlBlock>(readyQ);
+                    readyQ.Clear();
+                    foreach (ProcessControlBlock readyQPCB in readyQPCBs)
+                    {
+                        if (pcb.GetPCBID() == readyQPCB.GetPCBID())
+                        {
+                            readyQPCBs.Remove(readyQPCB);
+
+                        }
+                        else
+                        {
+                            readyQ.Enqueue(readyQPCB);
+                        }
+                    }
                 }
             }
         }

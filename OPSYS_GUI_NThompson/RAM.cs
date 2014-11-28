@@ -13,7 +13,7 @@ namespace OPSYS_GUI_NThompson
         //RAMObject members
         int size;
         public static List<Instruction> instructionsInRAM;
-        public List<ProcessControlBlock> pcbsInRAM;
+        public static List<ProcessControlBlock> pcbsInRAM;
         public bool jobAdded;
         //constructor with size parameter
         public RAMObject(int sz)
@@ -31,69 +31,27 @@ namespace OPSYS_GUI_NThompson
             pcbsInRAM = new List<ProcessControlBlock>();
             
         }
-        //This function could DEFINITELY use a re-write.
+        
         public void CompactRAM()
         {
-            //int address = 0;
-            
-            ////size = size of RAM
-            ////This was orignially a foreach loop, but it wasn't moving to the empty slots in RAM
-            //for (int i = 0; i < size; i++)
-            //{
-            //    //If this tries to access an out of bounds array element, breaks out of the for loop
-            //    if((i + 1) > instructionsInRAM.Count || (address + 1) > instructionsInRAM.Count)
-            //    {
-            //        break;
-            //    }
+            //get ram fragmentation
+            //the problem is the instructions are stored as a list, which resizes automatically
+            //that little fact makes compaction of RAM unnecessary
+            //the best i can do here is to find finished jobs and send them to the term queue
+            foreach (ProcessControlBlock pcb in pcbsInRAM)
+            {
+                if (pcb.programState.lineOfExecution >= pcb.GetPCBJobLength())
+                {
+                    pcb.destination = "Term";
+                }
+            }
 
-            //    //this SHOULD be getting an instruction from RAM
-            //    Instruction inst = new Instruction();
-            //    inst = instructionsInRAM[address];
-
-            //    //ask that instruction if it is null
-            //    //if it isn't null, attempt to squish it inside of RAM
-            //    //if it is null, address++
-            //    //if (!(inst.instIsNull))
-            //    //{
-            //    //    ProcessControlBlock pcb = new ProcessControlBlock();
-            //    //    pcb = inst.GetPCB(inst.GetJobID());
-                    
-            //    //    inst.GetPCB(inst.GetJobID()).baseAddress = address;
-            //    //    MoveJobInRAM(pcb, pcb.baseAddress);
-            //    //    address += inst.GetPCB(inst.GetJobID()).GetPCBJobLength();
-            //    //}
-            //    //else
-            //    //{
-            //    //    address++;
-            //    //}
-            //}
-
-            ////If there are jobs waiting on the hard drive, attempt to add them to RAM
-            //Queue<ProcessControlBlock> hdWaitQ = HardDrive.jobsWaitingHD;
-            //if (hdWaitQ.Count <= 0)
-            //{
-            //    return;
-            //}
-            //else
-            //{
-            //    ProcessControlBlock hdPCBToAdd = new ProcessControlBlock();
-            //    hdPCBToAdd = hdWaitQ.Peek();
-            //    AddJobToRAM(hdPCBToAdd);
-            //    if (jobAdded)
-            //    {
-            //        hdWaitQ.Dequeue();
-            //    }
-            //}
-            
-            ////Once all the jobs and such have been added/compacted/whatever
-            ////This should reassign all the Instruction addresses
-            ////Originally a regular for loop, would throw an out of bounds error
-            //int instIndex = 0;
-            //foreach(Instruction inst in instructionsInRAM)
-            //{
-            //    instructionsInRAM[instIndex].instructionAddress = instIndex;
-            //    instIndex++;
-            //}
+            //THIS DOES NOT WORK AS INTENDED
+            List<ProcessControlBlock> pcbsInHD = StartForm.hdd.GetPCBList();
+            if (pcbsInHD.Count <= 0)
+            {
+                return;
+            }
         }
 
         //If RAM gets corrupted, this will be the function to derail it

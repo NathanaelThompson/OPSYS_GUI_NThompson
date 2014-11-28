@@ -307,15 +307,13 @@ namespace OPSYS_GUI_NThompson
             }
 
             BigLoop();
-            
             dspForm.Show();
 
         }//end "go" button
 
         public static int bigLoopCycles = 0;
-        Queue<ProcessControlBlock> pcbQueueHD;
-        static List<ProcessControlBlock> pcbListToLTS;
         public static CPUObject testCPU = new CPUObject();
+        
         public void BigLoop()
         {
             finishedJobs = new List<ProcessControlBlock>();
@@ -330,59 +328,85 @@ namespace OPSYS_GUI_NThompson
             {
                 //Squishes jobs in RAM together
                 ram.CompactRAM();
-                
-                ProcessControlBlock pcbToAdd = sortedPCBsInRAM[0];
 
-                //if the ready queue contains this pcb
-                if (dispatch.readyQ.Contains(pcbToAdd))
-                {
-                    //but another job was added to the ready queue
-                    if (CheckReadyQ())
-                    {
-                        //do nothing, because a job was added to the ReadyQ
-                    }
-                    else //and no other job was added
-                    {
-                        dispatch.DecrementQueueTimes();
-                    }
-                }
-                else
-                {
-                    dispatch.DispatchInitialQueue(pcbToAdd);
-                }
+                //Sends a job in RAM to the dispatcher
+                JobToDispatcher();
 
-                ProcessControlBlock aPCB = new ProcessControlBlock();
-                aPCB = dispatch.GetJobFromReadyQ(sortedPCBsInRAM);
-                
-                //If there was a failure in selecting a PCB
-                if (aPCB.destination == "Fail")
-                {
-                    dispatch.DecrementQueueTimes();
-                }
-                else
-                {
-                    //Also runs DecodeAndExecute() and decrements queue times
-                    testCPU.Fetch(aPCB);
-                }
+                //Sends a job from the ready queue to the CPU
+                DispatcherToCPU();
 
                 bigLoopCycles++;
 
-                //check the hard drive for jobs, then send to the LTS
-                pcbQueueHD = HardDrive.jobsWaitingHD;
-                pcbListToLTS = new List<ProcessControlBlock>(pcbQueueHD);
-
-                if (pcbListToLTS.Count <= 0)
-                {
-                   //originally this would break and show the display form,
-                   //but when the Hard Drive was out of jobs, it would terminate the Big Loop prematurely
-                }
-                else
-                {
-                    lts.SortedAdd(pcbListToLTS);
-                }
+                //Attempt to add a job from the hard drive to the Long Term Scheduler
+                HDDToLTS();
+                
             }//end while
         }//end BigLoop()
 
+        Queue<ProcessControlBlock> pcbQueueHD;
+        static List<ProcessControlBlock> pcbListToLTS;
+        public void HDDToLTS()
+        {
+            //check the hard drive for jobs, then send to the LTS
+            pcbQueueHD = HardDrive.jobsWaitingHD;
+            pcbListToLTS = new List<ProcessControlBlock>(pcbQueueHD);
+
+            if (pcbListToLTS.Count <= 0)
+            {
+                //originally this would break and show the display form,
+                //but when the Hard Drive was out of jobs, it would terminate the Big Loop prematurely
+            }
+            else
+            {
+                lts.SortedAdd(pcbListToLTS);
+            }
+        }
+        public void DispatcherToCPU()
+        {
+            ProcessControlBlock aPCB = new ProcessControlBlock();
+            aPCB = dispatch.GetJobFromReadyQ(sortedPCBsInRAM);
+
+            //If there was a failure in selecting a PCB
+            if (aPCB.destination == "Fail")
+            {
+                dispatch.DecrementQueueTimes();
+            }
+            else
+            {
+                //Also runs DecodeAndExecute() and decrements queue times
+                testCPU.Fetch(aPCB);
+            }
+        }
+        public void JobToDispatcher()
+        {
+            ProcessControlBlock pcbToAdd = new ProcessControlBlock();
+            if (bigLoopCycles == 0)
+            {
+                pcbToAdd = sortedPCBsInRAM[0];
+            }
+
+            //if the ready queue contains this pcb
+            if (dispatch.readyQ.Contains(pcbToAdd))
+            {
+                //but another job was added to the ready queue
+                if (CheckReadyQ())
+                {
+                    //do nothing, because a job was added to the ReadyQ
+                }
+                else //and no other job was added
+                {
+                    dispatch.DecrementQueueTimes();
+                }
+            }
+            else if (dispatch.ioQ.Contains(pcbToAdd) || dispatch.waitQ.Contains(pcbToAdd))
+            {
+
+            }
+            else
+            {
+                dispatch.DispatchInitialQueue(pcbToAdd);
+            }
+        }
         //Runs through the readyQ to see if a job is ready
         public bool CheckReadyQ()
         {

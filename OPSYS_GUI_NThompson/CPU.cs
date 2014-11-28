@@ -10,8 +10,6 @@ namespace OPSYS_GUI_NThompson
     public class CPUObject
     {
         private int register1, register2, register3, register4, accumulator, pc;
-        
-        bool endOfInstructionsFlag = false;
 
         public int programCounter
         {
@@ -84,11 +82,7 @@ namespace OPSYS_GUI_NThompson
             get;
             set;
         }
-        public bool contextSwitchFlag
-        {
-            get;
-            set;
-        }
+        
         public CPUObject()
         {
             register1 = 1;
@@ -149,7 +143,7 @@ namespace OPSYS_GUI_NThompson
             
             //have a small problem when checking for lastInstruction
             bool lastInstruction = false;
-
+            bool doNotUpdateReadyQ = false;
             //If a job has been here before, get the program state
             if ((inst.GetInstructionLine() != 0) && (inst.GetInstructionLine() + 1 < currentPCB.GetPCBJobLength()))
             {
@@ -177,24 +171,28 @@ namespace OPSYS_GUI_NThompson
                     MathDecisionFunction(inst);
                     currentProgramState.lineOfExecution++;
                     currentPCB.totalCycles++;
+                    currentPCB.programState = currentProgramState;
                     dspatcher.DecrementQueueTimes();
                     break;
                 case "sub"://subtract two registers, done
                     MathDecisionFunction(inst);
                     currentProgramState.lineOfExecution++;
                     currentPCB.totalCycles++;
+                    currentPCB.programState = currentProgramState;
                     dspatcher.DecrementQueueTimes();
                     break;
                 case "mul"://multiply, done
                     MathDecisionFunction(inst);
                     currentProgramState.lineOfExecution++;
                     currentPCB.totalCycles++;
+                    currentPCB.programState = currentProgramState;
                     dspatcher.DecrementQueueTimes();
                     break;
                 case "div"://divide, done
                     MathDecisionFunction(inst);
                     currentProgramState.lineOfExecution++;
                     currentPCB.totalCycles++;
+                    currentPCB.programState = currentProgramState;
                     dspatcher.DecrementQueueTimes();
                     break;
                 case "_rd"://read, send job to io queue for X cycles, done
@@ -203,7 +201,9 @@ namespace OPSYS_GUI_NThompson
                     dspatcher.AddToIOQ(currentPCB, instructionValue);
                     currentProgramState.lineOfExecution++;
                     currentPCB.totalCycles++;
+                    currentPCB.programState = currentProgramState;
                     dspatcher.DecrementQueueTimes();
+                    doNotUpdateReadyQ = true;
                     break;
                 case "_wr"://write, send job to io queue for X cycles, done
                     dspatcher.readyQ.Dequeue();
@@ -211,7 +211,9 @@ namespace OPSYS_GUI_NThompson
                     dspatcher.AddToIOQ(currentPCB, instructionValue);
                     currentProgramState.lineOfExecution++;
                     currentPCB.totalCycles++;
+                    currentPCB.programState = currentProgramState;
                     dspatcher.DecrementQueueTimes();
+                    doNotUpdateReadyQ = true;
                     break;
                 case "_wt"://wait, send job to wait queue, done
                     dspatcher.readyQ.Dequeue();
@@ -219,18 +221,22 @@ namespace OPSYS_GUI_NThompson
                     dspatcher.AddToWaitQ(currentPCB, instructionValue);
                     currentProgramState.lineOfExecution++;
                     currentPCB.totalCycles++;
+                    currentPCB.programState = currentProgramState;
                     dspatcher.DecrementQueueTimes();
+                    doNotUpdateReadyQ = true;
                     break;
                 case "sto"://store value in acc, done
                     accumulatorValue = instructionValue;
                     currentProgramState.lineOfExecution++;
                     currentPCB.totalCycles++;
+                    currentPCB.programState = currentProgramState;
                     dspatcher.DecrementQueueTimes();
                     break;
                 case "rcl"://take acc value and assign to register, done
                     Recall(inst);
                     currentProgramState.lineOfExecution++;
                     currentPCB.totalCycles++;
+                    currentPCB.programState = currentProgramState;
                     dspatcher.DecrementQueueTimes();
                     break;
                 case "nul"://reset registers to default value, done
@@ -241,6 +247,7 @@ namespace OPSYS_GUI_NThompson
                     accumulator = 9;
                     currentProgramState.lineOfExecution++;
                     currentPCB.totalCycles++;
+                    currentPCB.programState = currentProgramState;
                     dspatcher.DecrementQueueTimes();
                     break;
                 case "stp"://halt execution, save state, return job to RQ, done
@@ -255,7 +262,6 @@ namespace OPSYS_GUI_NThompson
                     currentPCB.programState = currentProgramState;
 
                     currentPCB.totalCycles++;
-                    dspatcher.AddToReadyQ(currentPCB);
                     dspatcher.DecrementQueueTimes();
 
                     break;
@@ -274,7 +280,7 @@ namespace OPSYS_GUI_NThompson
                     currentPCB.totalCycles++;
                     dspatcher.AddToTermQ(currentPCB, 0);
                     dspatcher.DecrementQueueTimes();
-
+                    doNotUpdateReadyQ = true;
                     break;
                 default: //if SOMEHOW this case is called, it needs to be handled immediately
                     MessageBox.Show("BLUE SCREEN OF DEATH." + "\nProcess ID: " +
@@ -298,9 +304,12 @@ namespace OPSYS_GUI_NThompson
                     StartForm.dispatch.readyQ.Enqueue(tempPCB);
                 }
             }
+            else if(doNotUpdateReadyQ)
+            {
+                
+            }
             else
             {
-                //dspatcher.AddToReadyQ(currentPCB);
                 dspatcher.UpdateFrontOfRQ(currentPCB);
             }
         }

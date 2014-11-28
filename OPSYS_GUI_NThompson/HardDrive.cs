@@ -134,8 +134,15 @@ namespace OPSYS_GUI_NThompson
         {
             foreach (ProcessControlBlock pcb in aPCBList)
             {
-                pcb.location = "Hard Drive";
-                jobsWaitingHD.Enqueue(pcb);
+                if (jobsWaitingHD.Contains(pcb))
+                {
+                    //do nothing
+                }
+                else
+                {
+                    pcb.location = "Hard Drive";
+                    jobsWaitingHD.Enqueue(pcb);
+                }
             }
         }
         public string InstructionSelector()
