@@ -137,6 +137,8 @@
  *           
  *           The fix is relatively simple, but I don't have the time before I have to turn in Phase 2.  So, the code doesn't work.  Some of the RAM stuff
  *           needs to be reworked now that I have figured out why it is acting this way.
+ *           
+ * 11/28/14: I haven't been updating the dev log, but the general idea is this: my dispatcher is stupid and I hate it.
  */
 #endregion
 
@@ -171,7 +173,7 @@ namespace OPSYS_GUI_NThompson
         public int numCPUs = 0;
         DisplayForm dspForm = new DisplayForm();
         //For testing purposes only
-        public List<ProcessControlBlock> sortedPCBsInRAM;
+        public static List<ProcessControlBlock> sortedPCBsInRAM;
         
         #endregion
         public StartForm()
@@ -337,78 +339,60 @@ namespace OPSYS_GUI_NThompson
 
                 bigLoopCycles++;
 
-                //Attempt to add a job from the hard drive to the Long Term Scheduler
-                HDDToLTS();
+               
                 
             }//end while
         }//end BigLoop()
 
-        Queue<ProcessControlBlock> pcbQueueHD;
-        static List<ProcessControlBlock> pcbListToLTS;
-        public void HDDToLTS()
-        {
-            //check the hard drive for jobs, then send to the LTS
-            pcbQueueHD = HardDrive.jobsWaitingHD;
-            pcbListToLTS = new List<ProcessControlBlock>(pcbQueueHD);
 
-            if (pcbListToLTS.Count <= 0)
-            {
-                //originally this would break and show the display form,
-                //but when the Hard Drive was out of jobs, it would terminate the Big Loop prematurely
-            }
-            else
-            {
-                lts.SortedAdd(pcbListToLTS);
-            }
-        }
         public void DispatcherToCPU()
         {
             ProcessControlBlock aPCB = new ProcessControlBlock();
             aPCB = dispatch.GetJobFromReadyQ(sortedPCBsInRAM);
 
             //If there was a failure in selecting a PCB
-            if (aPCB.destination == "Fail")
+            if (aPCB.destination != "Fail")
             {
-                dispatch.DecrementQueueTimes();
-            }
-            else
-            {
-                //Also runs DecodeAndExecute() and decrements queue times
                 testCPU.Fetch(aPCB);
             }
         }
+
+
         public void JobToDispatcher()
         {
             ProcessControlBlock pcbToAdd = new ProcessControlBlock();
             if (bigLoopCycles == 0)
             {
                 pcbToAdd = sortedPCBsInRAM[0];
-            }
-
-            //if the ready queue contains this pcb
-            if (dispatch.readyQ.Contains(pcbToAdd))
-            {
-                //but another job was added to the ready queue
-                if (CheckReadyQ())
-                {
-                    //do nothing, because a job was added to the ReadyQ
-                }
-                else //and no other job was added
-                {
-                    dispatch.DecrementQueueTimes();
-                }
-            }
-            else if (dispatch.ioQ.Contains(pcbToAdd) || dispatch.waitQ.Contains(pcbToAdd))
-            {
-
+                dispatch.AddToReadyQ(pcbToAdd);
             }
             else
             {
-                dispatch.DispatchInitialQueue(pcbToAdd);
+                for (int i = 0; i < sortedPCBsInRAM.Count; i++)
+                {
+                    pcbToAdd = sortedPCBsInRAM[i];
+                    if (dispatch.readyQ.Contains(pcbToAdd))
+                    {
+                        if (CheckAndAddToReadyQ())
+                        {
+                            break;
+                        }
+                        
+                    }
+                    else if (dispatch.ioQ.Contains(pcbToAdd) || dispatch.waitQ.Contains(pcbToAdd))
+                    {
+
+                    }
+                    else
+                    {
+                        dispatch.DispatchInitialQueue(pcbToAdd);
+                    }
+                }
             }
         }
+
         //Runs through the readyQ to see if a job is ready
-        public bool CheckReadyQ()
+        public bool CheckAndAddToReadyQ()
         {
             bool jobAddedToReadyQ = false;
             foreach (ProcessControlBlock pcb in sortedPCBsInRAM)
@@ -417,11 +401,32 @@ namespace OPSYS_GUI_NThompson
                 {
                     //do nothing, because the job is already in the readyQ
                 }
-                else
+                else if (dispatch.ioQ.Contains(pcb) && pcb.waitCycles <= 0)
                 {
                     dispatch.AddToReadyQ(pcb);
+                    dispatch.RemoveJobFromQ("IO", pcb);
                     jobAddedToReadyQ = true;
-                    break;
+                }
+                else if (dispatch.waitQ.Contains(pcb) && pcb.waitCycles <= 0)
+                {
+                    dispatch.AddToReadyQ(pcb);
+                    dispatch.RemoveJobFromQ("Wait", pcb);
+                    jobAddedToReadyQ = true;
+                }
+                else
+                {
+                    //ERROR HERE
+                    int readyQSizeBefore = dispatch.readyQ.Count;
+                    dispatch.AddToReadyQ(pcb);
+                    int readyQSizeAfter = dispatch.readyQ.Count;
+                    if (readyQSizeAfter > readyQSizeBefore)
+                    {
+                        jobAddedToReadyQ = true;
+                    }
+                    else
+                    {
+                        jobAddedToReadyQ = false;
+                    }
                 }
             }
             return jobAddedToReadyQ;

@@ -114,16 +114,13 @@ namespace OPSYS_GUI_NThompson
             pgst = pcb.programState;
             programCounter = pcb.baseAddress + pgst.lineOfExecution;
             //ProcessControlBlock currentPCB = dspatcher.GetJobFromReadyQ(StartForm.ram.GetJobsInRAM());
-            if (programCounter > StartForm.ram.GetInstructionsInRAM().Count-1 || programCounter > pcb.GetPCBJobLength())
+            if (programCounter > StartForm.ram.GetInstructionsInRAM().Count-1)
+            {
+                pcb.destination = "Term";
+            }
+            else if(pcb.GetPCBJobLength() <= pcb.programState.lineOfExecution)
             {
                 dspatcher.AddToTermQ(pcb, 0);
-                List<ProcessControlBlock> pcbsInReadyQ = new List<ProcessControlBlock>(StartForm.dispatch.readyQ);
-                pcbsInReadyQ.Remove(pcb);
-                StartForm.dispatch.readyQ.Clear();
-                foreach (ProcessControlBlock tempPCB in pcbsInReadyQ)
-                {
-                    StartForm.dispatch.readyQ.Enqueue(tempPCB);
-                }
             }
             else
             {
@@ -159,7 +156,7 @@ namespace OPSYS_GUI_NThompson
             int instructionValue = inst.GetInstructionValue();
             int instID = inst.GetJobID();
 
-            if (inst_currentLine + 1 > currentPCB.GetPCBJobLength())
+            if (inst_currentLine + 1 > currentPCB.GetPCBJobLength() || instType == "err")
             {
                 lastInstruction = true;
             }
@@ -167,28 +164,28 @@ namespace OPSYS_GUI_NThompson
             //psuedo lookup table
             switch (instType)
             {
-                case "add"://add two registers, done
+                case "add"://add two values, add to acc, done
                     MathDecisionFunction(inst);
                     currentProgramState.lineOfExecution++;
                     currentPCB.totalCycles++;
                     currentPCB.programState = currentProgramState;
                     dspatcher.DecrementQueueTimes();
                     break;
-                case "sub"://subtract two registers, done
+                case "sub"://sub two values, add to acc, done
                     MathDecisionFunction(inst);
                     currentProgramState.lineOfExecution++;
                     currentPCB.totalCycles++;
                     currentPCB.programState = currentProgramState;
                     dspatcher.DecrementQueueTimes();
                     break;
-                case "mul"://multiply, done
+                case "mul"://multiply two values, add to acc, done
                     MathDecisionFunction(inst);
                     currentProgramState.lineOfExecution++;
                     currentPCB.totalCycles++;
                     currentPCB.programState = currentProgramState;
                     dspatcher.DecrementQueueTimes();
                     break;
-                case "div"://divide, done
+                case "div"://divide two numbers, add to acc, done
                     MathDecisionFunction(inst);
                     currentProgramState.lineOfExecution++;
                     currentPCB.totalCycles++;
@@ -227,6 +224,7 @@ namespace OPSYS_GUI_NThompson
                     break;
                 case "sto"://store value in acc, done
                     accumulatorValue = instructionValue;
+                    currentProgramState.accumulator = accumulatorValue;
                     currentProgramState.lineOfExecution++;
                     currentPCB.totalCycles++;
                     currentPCB.programState = currentProgramState;
@@ -251,7 +249,7 @@ namespace OPSYS_GUI_NThompson
                     dspatcher.DecrementQueueTimes();
                     break;
                 case "stp"://halt execution, save state, return job to RQ, done
-                    currentProgramState.lineOfExecution = inst_currentLine + 1;
+                    currentProgramState.lineOfExecution++;
                     currentProgramState.instructionType = instType;
                     currentProgramState.instructionValue = instructionValue;
                     currentProgramState.jobID = instID;
@@ -321,19 +319,24 @@ namespace OPSYS_GUI_NThompson
             {
                 case "A":
                     register1Value = accumulatorValue;
+                    currentProgramState.register1 = register1Value;
                     break;
                 case "B":
                     register2Value = accumulatorValue;
+                    currentProgramState.register2 = register2Value;
                     break;
                 case "C":
                     register3Value = accumulatorValue;
+                    currentProgramState.register3 = register3Value;
                     break;
                 case "D":
                     register4Value = accumulatorValue;
+                    currentProgramState.register4 = register4Value;
                     break;
                 default:
                     break;
             }
+            
         }
         public void MathDecisionFunction(Instruction inst)
         {
@@ -445,6 +448,7 @@ namespace OPSYS_GUI_NThompson
                 default:
                     break;
             }
+            currentProgramState.accumulator = accumulatorValue;
         }
         public void Multiply(string reg1,string reg2, int instValue)
         {
@@ -530,6 +534,7 @@ namespace OPSYS_GUI_NThompson
                 default:
                     break;
             }
+            currentProgramState.accumulator = accumulatorValue;
         }
         public void Subtract(string reg1, string reg2, int instValue)
         {
@@ -614,6 +619,7 @@ namespace OPSYS_GUI_NThompson
                 default:
                     break;
             }
+            currentProgramState.accumulator = accumulatorValue;
         }
         public void Divide(string reg1, string reg2, int instValue)
         {
@@ -698,6 +704,7 @@ namespace OPSYS_GUI_NThompson
                 default:
                     break;
             }
+            currentProgramState.accumulator = accumulatorValue;
         }
         
         #region Properties

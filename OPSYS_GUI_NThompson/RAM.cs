@@ -12,8 +12,8 @@ namespace OPSYS_GUI_NThompson
     {
         //RAMObject members
         int size;
-        public static List<Instruction> instructionsInRAM;
-        public static List<ProcessControlBlock> pcbsInRAM;
+        public List<Instruction> instructionsInRAM;
+        public List<ProcessControlBlock> pcbsInRAM;
         public bool jobAdded;
         //constructor with size parameter
         public RAMObject(int sz)
@@ -34,50 +34,78 @@ namespace OPSYS_GUI_NThompson
         
         public void CompactRAM()
         {
-            //get ram fragmentation
-            //the problem is the instructions are stored as a list, which resizes automatically
-            //that little fact makes compaction of RAM unnecessary
-            //the best i can do here is to find finished jobs and send them to the term queue
             foreach (ProcessControlBlock pcb in pcbsInRAM)
             {
                 if (pcb.programState.lineOfExecution >= pcb.GetPCBJobLength())
                 {
                     pcb.destination = "Term";
+                    pcb.location = "RAM";
+                }
+
+            }
+            for (int i = 0; i < pcbsInRAM.Count; i++)
+            {
+                if (pcbsInRAM[i].destination == "Term")
+                {
+                    StartForm.dispatch.AddToTermQ(pcbsInRAM[i], 0);
+                }
+            }
+            int gapInRAM = instructionsInRAM.Capacity - instructionsInRAM.Count;
+            LongTermScheduler lts = new LongTermScheduler();
+            Queue<ProcessControlBlock> hdInputQueue = HardDrive.jobsWaitingHD;
+            int nextJobLength;
+            try
+            {
+                nextJobLength = hdInputQueue.Peek().GetPCBJobLength();
+            }
+            catch (Exception ex)
+            {
+                nextJobLength = gapInRAM + 1;
+            }
+            if (gapInRAM > nextJobLength)
+            {
+                ProcessControlBlock newPCB = hdInputQueue.Dequeue();
+                lts.SortedAdd(newPCB);
+                StartForm.sortedPCBsInRAM.Add(newPCB);
+                List<Instruction> instructsToAdd = new List<Instruction>(newPCB.GetInstructions(newPCB.GetPCBID()));
+                foreach (Instruction inst in instructsToAdd)
+                {
+                    instructionsInRAM.Add(inst);
                 }
             }
 
-            //THIS DOES NOT WORK AS INTENDED
-            List<ProcessControlBlock> pcbsInHD = StartForm.hdd.GetPCBList();
-            if (pcbsInHD.Count <= 0)
+            ProcessControlBlock dynInstPCB = new ProcessControlBlock();
+            foreach (Instruction inst in instructionsInRAM)
             {
-                return;
+                dynInstPCB = inst.GetPCB(inst.GetJobID());
+                inst.instructionAddress = dynInstPCB.baseAddress + inst.GetInstructionLine();
             }
         }
 
         //If RAM gets corrupted, this will be the function to derail it
         //This could be reworked since I'm messing with the addressing stuff
-        public void MoveJobInRAM(ProcessControlBlock pcb, int baseAddress)
-        {
-            List<Instruction> instructionsToMove = pcb.GetInstructions(pcb.GetPCBID());
-            foreach (Instruction inst in instructionsToMove)
-            {
-                if (instructionsToMove.Count + instructionsInRAM.Count > size)
-                {
-                    return;
-                }
-                else if (instructionsInRAM.Contains(inst))
-                {
-                    return;
-                }
-                else
-                {
-                    Instruction instToSwap = new Instruction();
-                    instToSwap = inst;
-                    instructionsInRAM.Add(inst);
-                    instructionsInRAM.RemoveAt(instToSwap.instructionAddress);
-                }
-            }
-        }
+        //public void MoveJobInRAM(ProcessControlBlock pcb, int baseAddress)
+        //{
+        //    List<Instruction> instructionsToMove = pcb.GetInstructions(pcb.GetPCBID());
+        //    foreach (Instruction inst in instructionsToMove)
+        //    {
+        //        if (instructionsToMove.Count + instructionsInRAM.Count > size)
+        //        {
+        //            return;
+        //        }
+        //        else if (instructionsInRAM.Contains(inst))
+        //        {
+        //            return;
+        //        }
+        //        else
+        //        {
+        //            Instruction instToSwap = new Instruction();
+        //            instToSwap = inst;
+        //            instructionsInRAM.Add(inst);
+        //            instructionsInRAM.RemoveAt(instToSwap.instructionAddress);
+        //        }
+        //    }
+        //}
 
         //adds instructions to RAM
         public void AddInstructionsToRAM(List<Instruction> instructs)
@@ -131,12 +159,25 @@ namespace OPSYS_GUI_NThompson
             {
                 pcb.location = "RAM";
                 pcb.destination = "Ready";
+                pcb.limitAddress = pcb.baseAddress + pcb.GetPCBJobLength() - 1;
             }
         }
-
+        
         //Gets one instruction in RAM
         public Instruction GetInstructionInRAM(int address)
         {
+            //int instIndex = 0;
+            //Instruction tempInst = new Instruction();
+            //tempInst.instIsNull = true;
+            //foreach (Instruction inst in instructionsInRAM)
+            //{
+            //    if (address == inst.instructionAddress)
+            //    {
+            //        return inst;
+            //    }
+                
+            //}
+            //return tempInst;
             return instructionsInRAM[address];
         }
 
@@ -207,6 +248,11 @@ namespace OPSYS_GUI_NThompson
             foreach (Instruction inst in instToRemove)
             {
                 instructionsInRAM.Remove(inst);
+            }
+            foreach (Instruction inst in instructionsInRAM)
+            {
+                int instIndex = instructionsInRAM.IndexOf(inst);
+                inst.instructionAddress = instIndex;
             }
         }
     }

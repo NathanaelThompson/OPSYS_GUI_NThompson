@@ -27,7 +27,9 @@ namespace OPSYS_GUI_NThompson
 
         //This is what I call the ignorant dispatcher
         //It doesn't know anything about the PCB, but runs a series of tests
-        //to add the PCB to the appropriate queue
+        //to add the PCB to the appropriate queue.
+
+        //This function is also a real piece of shit and needs to be reworked...
         public void DispatchInitialQueue(ProcessControlBlock pcb)
         {
             if (!(pcb.destination == ""))
@@ -51,7 +53,7 @@ namespace OPSYS_GUI_NThompson
                     }
                     else
                     {
-                        AddToWaitQ(pcb, 0);
+                        AddToWaitQ(pcb, pcb.waitCycles);
                     }
                 }
                 else if (pcb.destination == "Ready")
@@ -111,6 +113,14 @@ namespace OPSYS_GUI_NThompson
             {//if there is a job in the wait or IO queue that wish to eventually enter the ready queue
                 if (pcb.waitCycles <= 0)
                 {//check their wait cycles
+                    if (pcb.location == "Wait")
+                    {
+                        RemoveJobFromQ("Wait", pcb);
+                    }
+                    if(pcb.location == "IO")
+                    {
+                        RemoveJobFromQ("IO", pcb);
+                    }
                     pcb.location = "Ready";
                     pcb.destination = "CPU";
                     AddToReadyQ(pcb);
@@ -133,7 +143,7 @@ namespace OPSYS_GUI_NThompson
             {
                 return;
             }
-            if (pcb.waitCycles == -999)
+            if (pcb.waitCycles <= 0)
             {
                 pcb.waitCycles = wtCycles;
             }
@@ -163,7 +173,7 @@ namespace OPSYS_GUI_NThompson
                     {
                         if (pcb.GetPCBID() == readyQPCB.GetPCBID())
                         {
-                            readyQPCBs.Remove(readyQPCB);
+                            //readyQPCBs.Remove(readyQPCB);
 
                         }
                         else
@@ -210,14 +220,14 @@ namespace OPSYS_GUI_NThompson
                     {
                         if (pcb.GetPCBID() == readyQPCB.GetPCBID())
                         {
-                            readyQPCBs.Remove(readyQPCB);
-
+                            //readyQPCBs.RemoveAt(readyQPCB);
                         }
                         else
                         {
                             readyQ.Enqueue(readyQPCB);
                         }
                     }
+
                 }
             }
         }
@@ -237,26 +247,54 @@ namespace OPSYS_GUI_NThompson
             }
             else
             {
-
                 termQ.Enqueue(pcb);
-                StartForm.finishedJobs.Add(pcb);
-                StartForm.ram.RemoveJobFromRAM(pcb);
-                StartForm.ram.RemoveInstructionSetFromRAM(pcb);
+                if (!StartForm.finishedJobs.Contains(pcb))
+                {
+                    StartForm.finishedJobs.Add(pcb);
+                }
+               
+                RemoveJobEverywhere(pcb);
                 termQ.Dequeue();
-                //int pcbID = pcb.GetPCBID();
-                //int pcbAcc = pcb.programState.accumulator;
-                //int pcbCycles = pcb.totalCycles;
-                //int priority = pcb.GetPCBJobPriority();
-                //string message = "Process " + pcbID + " has been removed." + 
-                //    "\nAccumulator Value: " + pcbAcc +
-                //    "\nCycles: " + pcbCycles +
-                //    "\nPriority: " + priority;
-                
-                //string message2 = "Job Name: " + pcb.GetPCBJobName();
-                //MessageBox.Show(message, message2, MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
 
+        public void RemoveJobEverywhere(ProcessControlBlock pcb)
+        {
+            StartForm.sortedPCBsInRAM.Remove(pcb);
+            List<ProcessControlBlock> ramJobs = new List<ProcessControlBlock>(StartForm.ram.pcbsInRAM);
+            List<ProcessControlBlock> readyList = new List<ProcessControlBlock>(readyQ);
+            int readyIndex = -1;
+            int ramIndex = -1;
+            foreach (ProcessControlBlock readyPCB in readyList)
+            {
+                if (pcb.GetPCBID() == readyPCB.GetPCBID())
+                {
+                    readyIndex = readyList.IndexOf(readyPCB);
+                }
+            }
+
+            foreach (ProcessControlBlock ramPCB in ramJobs)
+            {
+                if (pcb.GetPCBID() == ramPCB.GetPCBID())
+                {
+                    ramIndex = ramJobs.IndexOf(ramPCB);
+                }
+            }
+            if (readyIndex != -1)
+            {
+                readyQ.Clear();
+                readyList.Remove(pcb);
+                foreach (ProcessControlBlock readyPCB in readyList)
+                {
+                    readyQ.Enqueue(readyPCB);
+                }
+            }
+            if (ramIndex != -1)
+            {
+                StartForm.ram.RemoveJobFromRAM(pcb);
+                StartForm.ram.RemoveInstructionSetFromRAM(pcb);
+            }
+        }
         //The GetJobFromXQ functions remain (mostly) unused
         //I'm just calling Dequeue() all over the place
         public ProcessControlBlock GetJobFromReadyQ(List<ProcessControlBlock> pcbsInRAM)
@@ -275,8 +313,16 @@ namespace OPSYS_GUI_NThompson
                     //if a job is located in one of the queues, and is done waiting,
                     //go ahead and add it to the readyQ next
                     //change the "fail flag"
-                    if ((pcb.location == "IO" || pcb.location == "Wait") && pcb.waitCycles == 0)
+                    if ((pcb.location == "IO" || pcb.location == "Wait") && pcb.waitCycles <= 0)
                     {
+                        if (pcb.location == "IO")
+                        {
+                            RemoveJobFromQ("IO", pcb);
+                        }
+                        if (pcb.location == "Wait")
+                        {
+                            RemoveJobFromQ("Wait", pcb);
+                        }
                         pcb.destination = "Ready";
                         AddToReadyQ(pcb);
                         tempPCB = pcb;
@@ -298,7 +344,7 @@ namespace OPSYS_GUI_NThompson
                     int queueState = CheckQueueStates();
                     if (queueState == 0 || queueState == 1)
                     {
-                        return readyQ.Dequeue();
+                        return readyQ.Peek();
                     }
                     else
                     {
@@ -306,15 +352,12 @@ namespace OPSYS_GUI_NThompson
                         //even after decrementing wait times,
                         //then we must wait until a job is ready
                         DecrementToZero();
-                        return readyQ.Dequeue();
+                        return readyQ.Peek();
                     }
-                }
-                else
-                {
-                    DecrementQueueTimes();
                 }
                 //if after all that, there are still no jobs in the readyQ
                 //return a failed PCB
+                DecrementToZero();
                 return tempPCB;
             }
             else
@@ -336,10 +379,15 @@ namespace OPSYS_GUI_NThompson
                     pcb.destination = "Ready";
                     allQsFail = false;
                     AddToReadyQ(pcb);
+                    RemoveJobFromQ("Wait", pcb);
                     return;
                 }
+                else
+                {
+                    DecrementQueueTimes();
+                }
             }
-            
+
             //if no job was caught in the previous foreach loop
             //decrememnt queue times
             DecrementQueueTimes();
@@ -351,16 +399,111 @@ namespace OPSYS_GUI_NThompson
                     pcb.destination = "Ready";
                     allQsFail = false;
                     AddToReadyQ(pcb);
+                    RemoveJobFromQ("IO", pcb);
                     return;
+                }
+                else
+                {
+                    DecrementQueueTimes();
                 }
             }
 
             //if no job was caught in the previous foreach loop
             //decrememnt queue times
-            DecrementQueueTimes();
-            if (allQsFail)
+
+            if (allQsFail && waitQ.Count > 0 && ioQ.Count > 0 && readyQ.Count <= 0)
             {
                 DecrementToZero();
+            }
+            else
+            {
+                return;
+            }
+            //int lowestWaitTime = -999;
+            //int lowestWaitID;
+            
+            //int lowestIOTime = -999;
+            //int lowestIOID;
+
+            //foreach (ProcessControlBlock pcb in waitQ)
+            //{
+            //    if (pcb.waitCycles > lowestWaitTime)
+            //    {
+            //        lowestWaitID = pcb.GetPCBID();
+            //        lowestWaitTime = pcb.waitCycles;
+            //    }
+            //}
+            //foreach (ProcessControlBlock pcb in waitQ)
+            //{
+            //    pcb.waitCycles -= lowestWaitTime;
+            //}
+            //foreach (ProcessControlBlock pcb in ioQ)
+            //{
+            //    if (pcb.waitCycles > lowestIOTime)
+            //    {
+            //        lowestIOID = pcb.GetPCBID();
+            //        lowestIOTime = pcb.waitCycles;
+            //    }
+            //}
+            //foreach (ProcessControlBlock pcb in ioQ)
+            //{
+            //    pcb.waitCycles -= lowestIOTime;
+            //}
+        }
+        public void RemoveJobFromQ(string queueToEdit, ProcessControlBlock pcbToRemove)
+        {
+            switch (queueToEdit)
+            {
+                case "Ready":
+                    List<ProcessControlBlock> readyQList = new List<ProcessControlBlock>(readyQ);
+                    for (int i = 0; i < readyQ.Count; i++)
+                    {
+                        if (readyQList[i].GetPCBID() == pcbToRemove.GetPCBID())
+                        {
+                            readyQList.Remove(pcbToRemove);
+                            break;
+                        }
+                    }
+                    readyQ.Clear();
+                    for (int i = 0; i < readyQList.Count; i++)
+                    {
+                        readyQ.Enqueue(readyQList[i]);
+                    }
+                    break;
+                case "IO":
+                    List<ProcessControlBlock> ioQList = new List<ProcessControlBlock>(ioQ);
+                    for (int i = 0; i < ioQ.Count; i++)
+                    {
+                        if (ioQList[i].GetPCBID() == pcbToRemove.GetPCBID())
+                        {
+                            ioQList.Remove(pcbToRemove);
+                            break;
+                        }
+                    }
+                    ioQ.Clear();
+                    for (int i = 0; i < ioQList.Count; i++)
+                    {
+                        ioQ.Enqueue(ioQList[i]);
+                    }
+                    break;
+                case "Wait":
+                    List<ProcessControlBlock> waitQList = new List<ProcessControlBlock>(waitQ);
+                    for (int i = 0; i < waitQ.Count; i++)
+                    {
+                        if (waitQList[i].GetPCBID() == pcbToRemove.GetPCBID())
+                        {
+                            waitQList.Remove(pcbToRemove);
+                            break;
+                        }
+                    }
+                    waitQ.Clear();
+                    for (int i = 0; i < waitQList.Count; i++)
+                    {
+                        waitQ.Enqueue(waitQList[i]);
+                    }
+                    break;
+                default:
+                    break;
             }
         }
         public int CheckQueueStates()
@@ -370,6 +513,7 @@ namespace OPSYS_GUI_NThompson
                 if (pcb.waitCycles <= 0)
                 {
                     AddToReadyQ(pcb);
+                    RemoveJobFromQ("IO", pcb);
                     return 0;
                 }
             }
@@ -378,57 +522,47 @@ namespace OPSYS_GUI_NThompson
                 if (pcb.waitCycles <= 0)
                 {
                     AddToReadyQ(pcb);
+                    RemoveJobFromQ("Wait", pcb);
                     return 1;
                 }
             }
             return -999;
         }
-        //public ProcessControlBlock GetJobFromWaitQ()
-        //{
-        //    if (waitQ.Count <= 0)
-        //    {
-        //        return null;
-        //    }
-        //    else
-        //    {
-        //        return waitQ.Dequeue();
-        //    }
-        //}
-        //public ProcessControlBlock GetJobFromIOQ()
-        //{
-        //    if (ioQ.Count <= 0)
-        //    {
-        //        return null;
-        //    }
-        //    else
-        //    {
-        //        return ioQ.Dequeue();
-        //    }
-        //}
+        
         public void DecrementQueueTimes()
         {
-            List<ProcessControlBlock> currentPCBsWait = new List<ProcessControlBlock>(waitQ);
-            List<ProcessControlBlock> currentPCBsIO = new List<ProcessControlBlock>(ioQ);
-            foreach (ProcessControlBlock pcb in currentPCBsWait)
+            List<ProcessControlBlock> waitingPCBs = new List<ProcessControlBlock>();
+            if (waitQ.Count <= 0 && ioQ.Count <= 0 && readyQ.Count > 0)
             {
+                return;
+            }
+            foreach (ProcessControlBlock pcb in waitQ)
+            {
+                waitingPCBs.Add(pcb);
+            }
+            foreach(ProcessControlBlock pcb in ioQ){
+                waitingPCBs.Add(pcb);
+            }
+            foreach(ProcessControlBlock pcb in waitingPCBs){
                 if (pcb.waitCycles <= 0)
                 {
                     AddToReadyQ(pcb);
-                }
-                else
-                {
-                    pcb.waitCycles--;
+                    RemoveJobFromQ(pcb.location, pcb);
                 }
             }
-            foreach (ProcessControlBlock pcb in currentPCBsIO)
+            if (waitQ.Count != 0)
             {
-                if (pcb.waitCycles <= 0)
+                foreach (ProcessControlBlock pcb in waitQ)
                 {
-                    AddToReadyQ(pcb);
+                    pcb.waitCycles-=3;
                 }
-                else
+            }
+
+            if (ioQ.Count != 0)
+            {
+                foreach (ProcessControlBlock pcb in ioQ)
                 {
-                    pcb.waitCycles--;
+                    pcb.waitCycles-=3;
                 }
                 
             }

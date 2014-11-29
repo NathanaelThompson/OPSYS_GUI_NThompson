@@ -156,7 +156,7 @@ namespace OPSYS_GUI_NThompson
                     }
                 }
             }
-            StartForm.ram.SetJobsInRAM(sortedPCBList);//this is only called on the first pass
+            //StartForm.ram.SetJobsInRAM(sortedPCBList);//this is only called on the first pass
             int sizeOfRAM = StartForm.ram.GetRAMSize();
             int totalLOI = 0;
             //foreach PCB object, if they will fit, add instructions to RAM
@@ -172,11 +172,11 @@ namespace OPSYS_GUI_NThompson
                     pcb.baseAddress = totalLOI;
                     if (pcb.baseAddress == 0)
                     {
-                        pcb.limitAddress = lengthOfJob;
+                        pcb.limitAddress = lengthOfJob-1;
                     }
                     else
                     {
-                        pcb.limitAddress = pcb.baseAddress + lengthOfJob;
+                        pcb.limitAddress = pcb.baseAddress + lengthOfJob-1;
                     }
                     StartForm.ram.AddJobToRAM(pcb);
                 }
@@ -341,14 +341,15 @@ namespace OPSYS_GUI_NThompson
         }
 
         //If the jobs are already sorted, this function gets called
-        public void SortedAdd(List<ProcessControlBlock> sortedPCBsInHD)
+        public void SortedAdd(ProcessControlBlock sortedPCBsInHD)
         {
-            int numOfRAMInst = StartForm.ram.GetInstructionsInRAM().Count;
-            if ((sortedPCBsInHD[0].GetPCBJobLength() + numOfRAMInst) < StartForm.ram.GetRAMSize())
+            int numOfRAMInst = StartForm.ram.instructionsInRAM.Count;
+            if ((sortedPCBsInHD.GetPCBJobLength() + numOfRAMInst) < StartForm.ram.instructionsInRAM.Capacity)
             {
-                sortedPCBsInHD[0].destination = "RAM";
-                StartForm.ram.AddJobToRAM(sortedPCBsInHD[0]);
-                StartForm.ram.AddInstructionsToRAM(sortedPCBsInHD[0].GetInstructions(sortedPCBsInHD[0].GetPCBID()));
+                sortedPCBsInHD.destination = "RAM";
+                sortedPCBsInHD.baseAddress = numOfRAMInst;
+                StartForm.ram.AddJobToRAM(sortedPCBsInHD);
+                StartForm.ram.AddInstructionsToRAM(sortedPCBsInHD.GetInstructions(sortedPCBsInHD.GetPCBID()));
             }
         }
     }

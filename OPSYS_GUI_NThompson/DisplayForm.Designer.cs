@@ -41,7 +41,7 @@
             this.instructionGrid.Location = new System.Drawing.Point(48, 68);
             this.instructionGrid.Name = "instructionGrid";
             this.instructionGrid.RowTemplate.Height = 24;
-            this.instructionGrid.Size = new System.Drawing.Size(1017, 434);
+            this.instructionGrid.Size = new System.Drawing.Size(869, 434);
             this.instructionGrid.TabIndex = 0;
             // 
             // label1
@@ -56,7 +56,7 @@
             // 
             // closeButton
             // 
-            this.closeButton.Location = new System.Drawing.Point(929, 511);
+            this.closeButton.Location = new System.Drawing.Point(761, 511);
             this.closeButton.Name = "closeButton";
             this.closeButton.Size = new System.Drawing.Size(75, 23);
             this.closeButton.TabIndex = 2;
@@ -66,7 +66,7 @@
             // 
             // quitButton
             // 
-            this.quitButton.Location = new System.Drawing.Point(1010, 511);
+            this.quitButton.Location = new System.Drawing.Point(842, 511);
             this.quitButton.Name = "quitButton";
             this.quitButton.Size = new System.Drawing.Size(75, 23);
             this.quitButton.TabIndex = 3;
@@ -78,7 +78,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1097, 546);
+            this.ClientSize = new System.Drawing.Size(970, 546);
             this.Controls.Add(this.quitButton);
             this.Controls.Add(this.closeButton);
             this.Controls.Add(this.label1);
